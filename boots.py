@@ -16,6 +16,10 @@ import stat
 import subprocess
 import sys
 import time
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
 
 
 py3 = sys.version_info[0] == 3
@@ -380,6 +384,13 @@ def check(configuration):
             raise
 
 
+def strap(url, configuration):
+    response = urlopen(url)
+
+    with open(resolve_path(__file__), 'wb') as f:
+        f.write(response.read())
+
+
 def add_group_option(parser, default):
     parser.add_argument(
         '--group',
@@ -419,6 +430,10 @@ class Configuration:
         'venv_common_bin': 'Scripts',
         'venv_python': 'python',
         'venv_prompt': None,
+        'update_url': (
+            'https://raw.githubusercontent.com'
+            '/altendky/boots/master/boots.py'
+        )
     }
 
     def __init__(
@@ -432,6 +447,7 @@ class Configuration:
             venv_common_bin,
             venv_python,
             venv_prompt,
+            update_url,
     ):
         self.project_root = project_root
         self.default_group = default_group
@@ -442,6 +458,7 @@ class Configuration:
         self.venv_common_bin = venv_common_bin
         self.venv_python = venv_python
         self.venv_prompt = venv_prompt
+        self.update_url = update_url
 
     @classmethod
     def from_setup_cfg(cls, path):
@@ -504,6 +521,7 @@ class Configuration:
                 c['venv_python'],
             ),
             venv_prompt=venv_prompt,
+            update_url=c['update_url'],
         )
 
 
@@ -564,12 +582,25 @@ def main():
         help='Do not raise an error if no venv is present',
     )
     rm_parser.set_defaults(func=rm)
+
     compile_parser = add_subparser(
         subparsers,
         'compile',
         description='pip-compile the requirements .in files',
     )
     compile_parser.set_defaults(func=compile_dispatch)
+
+    strap_parser = add_subparser(
+        subparsers,
+        'strap',
+        description='Strap on some new boots (self update)',
+    )
+    strap_parser.add_argument(
+        '--url',
+        default=configuration.update_url,
+        help='Another URL to update from',
+    )
+    strap_parser.set_defaults(func=strap)
 
     args = parser.parse_args()
 
