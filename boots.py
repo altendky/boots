@@ -401,6 +401,53 @@ def strap(url, configuration):
         f.write(response.read())
 
 
+def publish(force, configuration):
+    ensure(
+        group=configuration.pre_group,
+        quick=False,
+        configuration=configuration,
+    )
+
+    no_tag = call(
+        [
+            'git',
+            'describe',
+            '--tags',
+            '--candidates', '0',
+        ],
+    )
+
+    if no_tag:
+        if force:
+            print('Not on a tag, but --force...')
+        else:
+            print('Not on a tag, doing nothing.')
+            return
+    else:
+        print('On a tag.')
+
+    print('Uploading to PyPI.')
+
+    for command in configuration.dist_commands:
+        check_call(
+            [
+                sys.executable,
+                resolve_path(configuration.project_root, 'setup.py'),
+                command,
+                '--dist-dir',
+                configuration.dist_dir,
+            ],
+        )
+
+    check_call(
+        [
+            'twine',
+            'upload',
+            resolve_path(configuration.dist_dir, '*'),
+        ],
+    )
+
+
 def add_group_option(parser, default):
     parser.add_argument(
         '--group',
@@ -443,7 +490,9 @@ class Configuration:
         'update_url': (
             'https://raw.githubusercontent.com'
             '/altendky/boots/master/boots.py'
-        )
+        ),
+        'dist_commands': ('sdist', 'bdist_wheel'),
+        'dist_dir': 'dist',
     }
 
     def __init__(
@@ -458,6 +507,8 @@ class Configuration:
             venv_python,
             venv_prompt,
             update_url,
+            dist_commands,
+            dist_dir,
     ):
         self.project_root = project_root
         self.default_group = default_group
@@ -469,6 +520,8 @@ class Configuration:
         self.venv_python = venv_python
         self.venv_prompt = venv_prompt
         self.update_url = update_url
+        self.dist_commands = dist_commands
+        self.dist_dir = dist_dir
 
     @classmethod
     def from_setup_cfg(cls, path):
@@ -512,6 +565,11 @@ class Configuration:
                 os.path.basename(venv_path),
             )
 
+        dist_dir = resolve_path(
+            reference_path,
+            c['dist_dir'],
+        )
+
         return cls(
             project_root=project_root,
             default_group=c['default_group'],
@@ -532,6 +590,8 @@ class Configuration:
             ),
             venv_prompt=venv_prompt,
             update_url=c['update_url'],
+            dist_commands=c['dist_commands'],
+            dist_dir=dist_dir,
         )
 
 
@@ -611,6 +671,18 @@ def main():
         help='Another URL to update from',
     )
     strap_parser.set_defaults(func=strap)
+
+    publish_parser = add_subparser(
+        subparsers,
+        'publish',
+        description='Build and publish to PyPI',
+    )
+    publish_parser.add_argument(
+        '--force',
+        action='store_true',
+        help='Ignore the check for being on a tag',
+    )
+    publish_parser.set_defaults(func=publish)
 
     args = parser.parse_args()
 
