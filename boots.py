@@ -434,7 +434,7 @@ def publish(force, configuration):
     for command in configuration.dist_commands:
         check_call(
             [
-                sys.executable,
+                resolve_path(configuration.venv_common_bin, 'python'),
                 resolve_path(configuration.project_root, 'setup.py'),
                 command,
                 '--dist-dir',
@@ -444,7 +444,7 @@ def publish(force, configuration):
 
     check_call(
         [
-            'twine',
+            resolve_path(configuration.venv_common_bin, 'twine'),
             'upload',
             resolve_path(configuration.dist_dir, '*'),
         ],
