@@ -56,15 +56,22 @@ def check_output(command, *args, **kwargs):
 
 def read_dot_env(path):
     env = {}
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
 
-            if line.startswith('#'):
-                continue
+    try:
+        f = open(path)
+    except (FileNotFoundError if py3 else IOError) as e:
+        if e.errno != errno.ENOENT:
+            raise
+    else:
+        with f:
+            for line in f:
+                line = line.strip()
 
-            k, _, v = line.partition('=')
-            env[k] = v
+                if line.startswith('#'):
+                    continue
+
+                k, _, v = line.partition('=')
+                env[k] = v
 
     return env
 
