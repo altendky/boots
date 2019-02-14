@@ -33,22 +33,25 @@ def resolve_path(*path):
     return os.path.normpath(os.path.abspath(os.path.join(*path)))
 
 
-def check_call(command, *args, **kwargs):
+def sub(f, command, *args, **kwargs):
     command = list(command)
     print('Launching: ')
     for arg in command:
         print('    {}'.format(arg))
 
-    return subprocess.check_call(command, *args, **kwargs)
+    return f(command, *args, **kwargs)
+
+
+def call(command, *args, **kwargs):
+    return sub(subprocess.call, command, *args, **kwargs)
+
+
+def check_call(command, *args, **kwargs):
+    return sub(subprocess.check_call, command, *args, **kwargs)
 
 
 def check_output(command, *args, **kwargs):
-    command = list(command)
-    print('Launching: ')
-    for arg in command:
-        print('    {}'.format(arg))
-
-    return subprocess.check_output(command, *args, **kwargs)
+    return sub(subprocess.check_output, command, *args, **kwargs)
 
 
 def read_dot_env(path):
