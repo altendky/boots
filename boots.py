@@ -59,7 +59,7 @@ def read_dot_env(path):
 
     try:
         f = open(path)
-    except (FileNotFoundError if py3 else IOError) as e:
+    except IOError as e:
         if e.errno != errno.ENOENT:
             raise
     else:
