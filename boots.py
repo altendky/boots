@@ -312,7 +312,7 @@ def rm(ignore_missing, configuration):
             )
 
 
-def pip_compile(configuration):
+def lock(configuration):
     if not venv_existed(configuration=configuration):
         create(group=None, configuration=configuration)
 
@@ -688,12 +688,12 @@ def main():
     )
     rm_parser.set_defaults(func=rm)
 
-    compile_parser = add_subparser(
+    lock_parser = add_subparser(
         subparsers,
         'compile',
         description='pip-compile the requirements specification files',
     )
-    compile_parser.set_defaults(func=pip_compile)
+    lock_parser.set_defaults(func=lock)
 
     resole_parser = add_subparser(
         subparsers,
