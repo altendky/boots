@@ -703,7 +703,7 @@ def main():
     resole_parser.add_argument(
         '--url',
         default=configuration.update_url,
-        help='Another URL to update from',
+        help='URL to update from',
     )
     resole_parser.set_defaults(func=resole)
 
