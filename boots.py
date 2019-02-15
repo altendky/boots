@@ -442,12 +442,25 @@ def resole(url, configuration):
         f.write(response.read())
 
 
+def build(configuration):
+    if not venv_existed(configuration=configuration):
+        create(group=configuration.default_group, configuration=configuration)
+
+    for command in configuration.dist_commands:
+        check_call(
+            [
+                resolve_path(configuration.venv_common_bin, 'python'),
+                resolve_path(configuration.project_root, 'setup.py'),
+                command,
+                '--dist-dir',
+                configuration.dist_dir,
+            ],
+        )
+
+
 def publish(force, configuration):
-    ensure(
-        group=configuration.pre_group,
-        quick=False,
-        configuration=configuration,
-    )
+    if not venv_existed(configuration=configuration):
+        create(group=configuration.default_group, configuration=configuration)
 
     no_tag = call(
         [
@@ -468,17 +481,6 @@ def publish(force, configuration):
         print('On a tag.')
 
     print('Uploading to PyPI.')
-
-    for command in configuration.dist_commands:
-        check_call(
-            [
-                resolve_path(configuration.venv_common_bin, 'python'),
-                resolve_path(configuration.project_root, 'setup.py'),
-                command,
-                '--dist-dir',
-                configuration.dist_dir,
-            ],
-        )
 
     check_call(
         [
@@ -707,10 +709,17 @@ def main():
     )
     resole_parser.set_defaults(func=resole)
 
+    build_parser = add_subparser(
+        subparsers,
+        'build',
+        description='Build...  such as sdist and bdist_wheel',
+    )
+    build_parser.set_defaults(func=build)
+
     publish_parser = add_subparser(
         subparsers,
         'publish',
-        description='Build and publish to PyPI',
+        description='Publish to PyPI',
     )
     publish_parser.add_argument(
         '--force',
