@@ -695,17 +695,17 @@ def main():
     )
     compile_parser.set_defaults(func=pip_compile)
 
-    strap_parser = add_subparser(
+    resole_parser = add_subparser(
         subparsers,
         'resole',
         description='Resole boots.py (self update)',
     )
-    strap_parser.add_argument(
+    resole_parser.add_argument(
         '--url',
         default=configuration.update_url,
         help='Another URL to update from',
     )
-    strap_parser.set_defaults(func=resole)
+    resole_parser.set_defaults(func=resole)
 
     publish_parser = add_subparser(
         subparsers,
