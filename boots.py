@@ -58,6 +58,9 @@ platforms = (
 )
 
 
+default_pre_requirements = ['pip', 'setuptools', 'pip-tools']
+
+
 def get_platform():
     for platform in platforms:
         if sys.platform.startswith(platform):
@@ -147,7 +150,7 @@ def pip_seed_requirements(configuration):
     if os.path.isfile(pre_specification):
         return ['--requirement', pre_specification]
 
-    return ['pip', 'setuptools', 'pip-tools']
+    return default_pre_requirements
 
 
 def create(group, configuration):
