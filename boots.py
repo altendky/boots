@@ -432,7 +432,7 @@ def check(configuration):
             raise
 
 
-def strap(url, configuration):
+def resole(url, configuration):
     response = urlopen(url)
 
     with open(resolve_path(__file__), 'wb') as f:
@@ -694,15 +694,15 @@ def main():
 
     strap_parser = add_subparser(
         subparsers,
-        'strap',
-        description='Strap on some new boots (self update)',
+        'resole',
+        description='Resole boots.py (self update)',
     )
     strap_parser.add_argument(
         '--url',
         default=configuration.update_url,
         help='Another URL to update from',
     )
-    strap_parser.set_defaults(func=strap)
+    strap_parser.set_defaults(func=resole)
 
     publish_parser = add_subparser(
         subparsers,
