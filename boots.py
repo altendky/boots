@@ -1,12 +1,12 @@
 from __future__ import print_function
 
 import argparse
+import collections
 try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
 import errno
-import functools
 import glob
 import os
 import os.path
@@ -27,6 +27,43 @@ py3 = sys.version_info[0] == 3
 
 class ExitError(Exception):
     pass
+
+
+class InvalidStageException(Exception):
+    @classmethod
+    def build(cls, stage):
+        return cls('Stage {stage!r} not found in: {stages}'.format(
+            stage=stage,
+            stages=', '.join(requirements_extensions)
+        ))
+
+
+requirements_specification = 'in'
+requirements_lock = 'txt'
+
+requirements_extensions = collections.OrderedDict((
+    (requirements_specification, '.in'),
+    (requirements_lock, '.txt'),
+))
+
+
+windows = 'win32'
+linux = 'linux'
+macos = 'darwin'
+
+platforms = (
+    linux,
+    windows,
+    macos,
+)
+
+
+def get_platform():
+    for platform in platforms:
+        if sys.platform.startswith(platform):
+            return platform
+
+    raise ExitError('Unsupported platform {}'.format(sys.platform))
 
 
 def resolve_path(*path):
@@ -76,40 +113,57 @@ def read_dot_env(path):
     return env
 
 
+def build_requirements_path(group, stage, configuration):
+    if stage not in requirements_extensions:
+        raise InvalidStageException.build(stage=stage)
+
+    file_name = group
+    if stage == requirements_lock:
+        file_name += '.' + configuration.platform
+    file_name += requirements_extensions[stage]
+
+    return resolve_path(
+        configuration.requirements_path,
+        file_name,
+    )
+
+
 def pip_seed_requirements(configuration):
-    pre_txt = resolve_path(
-        configuration.requirements_path,
-        configuration.pre_group + '.txt',
+    pre_lock = build_requirements_path(
+        group=configuration.pre_group,
+        stage=requirements_lock,
+        configuration=configuration
     )
 
-    if os.path.isfile(pre_txt):
-        return ['--requirement', pre_txt]
+    if os.path.isfile(pre_lock):
+        return ['--requirement', pre_lock]
 
-    pre_in = resolve_path(
-        configuration.requirements_path,
-        configuration.pre_group + '.in',
+    pre_specification = build_requirements_path(
+        group=configuration.pre_group,
+        stage=requirements_specification,
+        configuration=configuration
     )
 
-    if os.path.isfile(pre_in):
-        return ['--requirement', pre_in]
+    if os.path.isfile(pre_specification):
+        return ['--requirement', pre_specification]
 
     return ['pip', 'setuptools', 'pip-tools']
 
 
 def create(group, configuration):
     d = {
-        'linux': linux_create,
-        'win32': windows_create,
+        linux: linux_create,
+        macos: linux_create,
+        windows: windows_create,
     }
 
-    dispatch(d, group=group, configuration=configuration)
+    d[configuration.platform](group=group, configuration=configuration)
 
 
 def common_create(
     group,
     python,
     venv_bin,
-    requirements_platform,
     symlink,
     configuration,
 ):
@@ -161,16 +215,16 @@ def common_create(
 
     sync_requirements(
         group=group,
-        requirements_platform=requirements_platform,
         configuration=configuration,
     )
 
 
-def sync_requirements(group, requirements_platform, configuration):
-    filename = group
-
-    filename = '{}.{}.txt'.format(filename, requirements_platform)
-    path = os.path.join(configuration.requirements_path, filename)
+def sync_requirements(group, configuration):
+    path = build_requirements_path(
+        group=group,
+        stage=requirements_lock,
+        configuration=configuration,
+    )
 
     env = dict(os.environ)
     env.update(read_dot_env(configuration.dot_env))
@@ -183,7 +237,7 @@ def sync_requirements(group, requirements_platform, configuration):
 
     requirements_path = os.path.join(
         configuration.requirements_path,
-        'local.txt',
+        'local' + requirements_extensions[requirements_lock],
     )
     check_call(
         [
@@ -215,7 +269,6 @@ def linux_create(group, configuration):
         group=group,
         python='python3.7',
         venv_bin=venv_bin,
-        requirements_platform='linux',
         symlink=True,
         configuration=configuration,
     )
@@ -238,7 +291,6 @@ def windows_create(group, configuration):
         group=group,
         python=python_path,
         venv_bin=configuration.venv_common_bin,
-        requirements_platform='windows',
         symlink=False,
         configuration=configuration,
     )
@@ -257,39 +309,25 @@ def rm(ignore_missing, configuration):
             )
 
 
-def compile_dispatch(configuration):
-    d = {
-        'linux': functools.partial(
-            common_compile,
-            requirements_platform='linux',
-        ),
-        'win32': functools.partial(
-            common_compile,
-            requirements_platform='windows',
-        ),
-    }
-
-    dispatch(d, configuration=configuration)
-
-
-def common_compile(requirements_platform, configuration):
+def pip_compile(configuration):
     if not venv_existed(configuration=configuration):
         create(group=None, configuration=configuration)
 
-    in_paths = tuple(
+    specification_paths = tuple(
         os.path.join(configuration.requirements_path, filename)
         for filename in glob.glob(
             os.path.join(configuration.requirements_path, '*.in'),
         )
     )
 
-    for in_path in in_paths:
-        stem = os.path.splitext(in_path)[0]
+    for specification_path in specification_paths:
+        stem = os.path.splitext(specification_path)[0]
         group = os.path.basename(stem)
 
-        out_path = '{}.{}.txt'.format(
-            stem,
-            requirements_platform,
+        out_path = build_requirements_path(
+            group=group,
+            stage=requirements_lock,
+            configuration=configuration,
         )
 
         extras = []
@@ -300,7 +338,7 @@ def common_compile(requirements_platform, configuration):
             [
                 os.path.join(configuration.venv_common_bin, 'pip-compile'),
                 '--output-file', out_path,
-                in_path,
+                specification_path,
             ] + extras,
             cwd=configuration.project_root,
         )
@@ -311,21 +349,6 @@ def venv_existed(configuration):
 
 
 def ensure(group, quick, configuration):
-    d = {
-        'linux': functools.partial(
-            common_ensure,
-            requirements_platform='linux',
-        ),
-        'win32': functools.partial(
-            common_ensure,
-            requirements_platform='windows',
-        ),
-    }
-
-    dispatch(d, group=group, quick=quick, configuration=configuration)
-
-
-def common_ensure(group, quick, requirements_platform, configuration):
     existed = venv_existed(configuration=configuration)
 
     if not existed:
@@ -333,7 +356,6 @@ def common_ensure(group, quick, requirements_platform, configuration):
     elif not quick:
         sync_requirements(
             group=group,
-            requirements_platform=requirements_platform,
             configuration=configuration,
         )
 
@@ -367,8 +389,8 @@ def check(configuration):
                 break
         else:
             raise Exception(
-                '{} assignment not found '
-                'in "{}"'.format(expected_name, activate),
+                '{} assignment not found'
+                ' in "{}"'.format(expected_name, activate),
             )
     # except OSError as e:
     #     if e.errno == errno.ENOENT:
@@ -475,15 +497,6 @@ def add_group_option(parser, default):
     )
 
 
-def dispatch(d, *args, **kwargs):
-    for name, f in d.items():
-        if sys.platform.startswith(name):
-            f(*args, **kwargs)
-            break
-    else:
-        raise ExitError('Platform not supported: {}'.format(sys.platform))
-
-
 def add_subparser(subparser, *args, **kwargs):
     return subparser.add_parser(
         *args,
@@ -525,6 +538,7 @@ class Configuration:
             update_url,
             dist_commands,
             dist_dir,
+            platform,
     ):
         self.project_root = project_root
         self.default_group = default_group
@@ -538,6 +552,7 @@ class Configuration:
         self.update_url = update_url
         self.dist_commands = dist_commands
         self.dist_dir = dist_dir
+        self.platform = platform
 
     @classmethod
     def from_setup_cfg(cls, path):
@@ -608,6 +623,7 @@ class Configuration:
             update_url=c['update_url'],
             dist_commands=c['dist_commands'],
             dist_dir=dist_dir,
+            platform=get_platform(),
         )
 
 
@@ -672,9 +688,9 @@ def main():
     compile_parser = add_subparser(
         subparsers,
         'compile',
-        description='pip-compile the requirements .in files',
+        description='pip-compile the requirements specification files',
     )
-    compile_parser.set_defaults(func=compile_dispatch)
+    compile_parser.set_defaults(func=pip_compile)
 
     strap_parser = add_subparser(
         subparsers,
