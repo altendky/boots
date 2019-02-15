@@ -76,6 +76,26 @@ def read_dot_env(path):
     return env
 
 
+def pip_seed_requirements(configuration):
+    pre_txt = resolve_path(
+        configuration.requirements_path,
+        configuration.pre_group + '.txt',
+    )
+
+    if os.path.isfile(pre_txt):
+        return ['--requirement', pre_txt]
+
+    pre_in = resolve_path(
+        configuration.requirements_path,
+        configuration.pre_group + '.in',
+    )
+
+    if os.path.isfile(pre_in):
+        return ['--requirement', pre_in]
+
+    return ['pip', 'setuptools', 'pip-tools']
+
+
 def create(group, configuration):
     d = {
         'linux': linux_create,
@@ -125,17 +145,13 @@ def common_create(
     if symlink:
         os.symlink(venv_bin, configuration.venv_common_bin)
 
-    requirements_path = os.path.join(
-        configuration.requirements_path,
-        '{}.{}.txt'.format(configuration.pre_group, requirements_platform),
-    )
     check_call(
         [
             configuration.venv_python,
             '-m', 'pip',
             'install',
-            '--requirement', requirements_path,
-        ],
+            '--upgrade',
+        ] + pip_seed_requirements(configuration=configuration),
         cwd=configuration.project_root,
         env=env,
     )
