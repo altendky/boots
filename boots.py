@@ -690,7 +690,7 @@ def main():
 
     lock_parser = add_subparser(
         subparsers,
-        'compile',
+        'lock',
         description='pip-compile the requirements specification files',
     )
     lock_parser.set_defaults(func=lock)
@@ -728,7 +728,7 @@ def main():
         if k not in reserved_parameters
     }
 
-    os.environ['CUSTOM_COMPILE_COMMAND'] = 'python {} compile'.format(
+    os.environ['CUSTOM_COMPILE_COMMAND'] = 'python {} lock'.format(
         os.path.basename(__file__)
     )
     os.environ['PIP_DISABLE_PIP_VERSION_CHECK'] = '1'
