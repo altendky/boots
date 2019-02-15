@@ -47,23 +47,23 @@ requirements_extensions = collections.OrderedDict((
 ))
 
 
-windows = 'win32'
+windows = 'windows'
 linux = 'linux'
-macos = 'darwin'
+macos = 'macos'
 
-platforms = (
-    linux,
-    windows,
-    macos,
-)
+platforms = collections.OrderedDict((
+    (linux, 'linux'),
+    (windows, 'win'),
+    (macos, 'darwin'),
+))
 
 
 default_pre_requirements = ['pip', 'setuptools', 'pip-tools']
 
 
 def get_platform():
-    for platform in platforms:
-        if sys.platform.startswith(platform):
+    for platform, platform_text in platforms.items():
+        if sys.platform.startswith(platform_text):
             return platform
 
     raise ExitError('Unsupported platform {}'.format(sys.platform))
