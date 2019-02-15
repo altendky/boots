@@ -257,11 +257,8 @@ def compile_dispatch(configuration):
 
 
 def common_compile(requirements_platform, configuration):
-    ensure(
-        group=configuration.pre_group,
-        quick=False,
-        configuration=configuration,
-    )
+    if not venv_existed(configuration=configuration):
+        create(group=None, configuration=configuration)
 
     in_paths = tuple(
         os.path.join(configuration.requirements_path, filename)
