@@ -490,6 +490,18 @@ def publish(force, configuration):
     )
 
 
+def pick(destination, group, configuration):
+    source = build_requirements_path(
+        group=group,
+        stage=requirements_lock,
+        configuration=configuration,
+    )
+
+    print('source', source)
+    print('destination', destination)
+    # shutil.copyfile(source, destination)
+
+
 def add_group_option(parser, default):
     parser.add_argument(
         '--group',
@@ -785,6 +797,22 @@ def main():
         help='Ignore the check for being on a tag',
     )
     publish_parser.set_defaults(func=publish)
+
+    pick_parser = add_subparser(
+        subparsers,
+        'pick',
+        description='Copy the presently applicable lock file',
+    )
+    pick_parser.add_argument(
+        '--destination',
+        default=resolve_path(
+            configuration.requirements_path,
+            'picked' + requirements_extensions[requirements_lock],
+        ),
+        help='The path to copy the picked lock file to',
+    )
+    add_group_option(parser=pick_parser, default=configuration.default_group)
+    pick_parser.set_defaults(func=pick)
 
     args = parser.parse_args()
 
