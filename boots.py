@@ -38,6 +38,20 @@ class InvalidStageException(Exception):
         ))
 
 
+class InvalidBooleanString(Exception):
+    @classmethod
+    def build(cls, s):
+        return cls(
+            'Invalid boolean string found {invalid!r}.'
+            '  Expected one of: {valid}'.format(
+                invalid=s,
+                valid=', '.join(
+                    '/'.join(pair) for pair in boolean_string_pairs
+                ),
+            )
+        )
+
+
 requirements_specification = 'in'
 requirements_lock = 'txt'
 
@@ -336,6 +350,9 @@ def lock(configuration):
         if group == configuration.pre_group:
             extras.append('--allow-unsafe')
 
+        if configuration.use_hashes:
+            extras.append('--generate-hashes')
+
         check_call(
             [
                 os.path.join(configuration.venv_common_bin, 'pip-compile'),
@@ -572,6 +589,27 @@ class PythonIdentifier:
         return command
 
 
+boolean_string_pairs = (
+    ('yes', 'no'),
+    ('true', 'false'),
+    ('1', '0'),
+    ('on', 'off'),
+)
+truthy_strings = {s[0].lower() for s in boolean_string_pairs}
+falsey_strings = {s[1].lower() for s in boolean_string_pairs}
+
+
+def parse_boolean_string(s):
+    if s in truthy_strings:
+        print('blue', repr(s), truthy_strings)
+        return True
+
+    if s in falsey_strings:
+        return False
+
+    raise InvalidBooleanString.build(s=s)
+
+
 class Configuration:
     configuration_defaults = {
         'project_root': '',
@@ -590,6 +628,7 @@ class Configuration:
         ),
         'dist_commands': ('sdist', 'bdist_wheel'),
         'dist_dir': 'dist',
+        'use_hashes': 'yes',
     }
 
     def __init__(
@@ -607,6 +646,7 @@ class Configuration:
             update_url,
             dist_commands,
             dist_dir,
+            use_hashes,
             platform,
     ):
         self.project_root = project_root
@@ -622,6 +662,7 @@ class Configuration:
         self.update_url = update_url
         self.dist_commands = dist_commands
         self.dist_dir = dist_dir
+        self.use_hashes = use_hashes
         self.platform = platform
 
     @classmethod
@@ -675,6 +716,8 @@ class Configuration:
             c['dist_dir'],
         )
 
+        use_hashes = parse_boolean_string(c['use_hashes'])
+
         return cls(
             project_root=project_root,
             python_identifier=python_identifier,
@@ -698,6 +741,7 @@ class Configuration:
             update_url=c['update_url'],
             dist_commands=c['dist_commands'],
             dist_dir=dist_dir,
+            use_hashes=use_hashes,
             platform=get_platform(),
         )
 
