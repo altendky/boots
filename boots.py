@@ -601,7 +601,6 @@ falsey_strings = {s[1].lower() for s in boolean_string_pairs}
 
 def parse_boolean_string(s):
     if s in truthy_strings:
-        print('blue', repr(s), truthy_strings)
         return True
 
     if s in falsey_strings:
