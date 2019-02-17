@@ -15,6 +15,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import tempfile
 import time
 try:
     from urllib.request import urlopen
@@ -327,7 +328,19 @@ def rm(ignore_missing, configuration):
             )
 
 
-def lock(configuration):
+def lock(temporary_env, configuration):
+    if not temporary_env:
+        lock_core(configuration=configuration)
+    else:
+        temporary_path = tempfile.mkdtemp()
+        try:
+            configuration.venv_path = os.path.join(temporary_path, 'venv')
+            lock_core(configuration=configuration)
+        finally:
+            rmtree(path=temporary_path)
+
+
+def lock_core(configuration):
     if not venv_existed(configuration=configuration):
         create(group=None, configuration=configuration)
 
@@ -821,6 +834,14 @@ def main():
         subparsers,
         'lock',
         description='pip-compile the requirements specification files',
+    )
+    lock_parser.add_argument(
+        '--temporary-env',
+        action='store_true',
+        help=(
+            'Use a temporary virtualenv such as when locking on a secondary'
+            ' platform using a shared filesystem'
+        ),
     )
     lock_parser.set_defaults(func=lock)
 
