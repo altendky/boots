@@ -140,7 +140,7 @@ def build_requirements_path(group, stage, configuration):
     file_name += requirements_extensions[stage]
 
     return resolve_path(
-        configuration.requirements_path,
+        configuration.resolved_requirements_path(),
         file_name,
     )
 
@@ -184,14 +184,14 @@ def common_create(
     symlink,
     configuration,
 ):
-    if os.path.exists(configuration.venv_path):
+    if os.path.exists(configuration.resolved_venv_path()):
         raise ExitError(
             'venv already exists. if you know it is safe, remove it with:\n'
             '    python {} rm'.format(os.path.basename(__file__))
         )
 
     env = dict(os.environ)
-    env.update(read_dot_env(configuration.dot_env))
+    env.update(read_dot_env(configuration.resolved_dot_env()))
     pip_src = env.get('PIP_SRC')
     if pip_src is not None:
         try:
@@ -206,19 +206,19 @@ def common_create(
         [
             python,
             '-m', 'venv',
-            '--prompt', configuration.venv_prompt,
-            configuration.venv_path,
+            '--prompt', configuration.resolved_venv_prompt(),
+            configuration.resolved_venv_path(),
         ],
         cwd=configuration.project_root,
         env=env,
     )
 
     if symlink:
-        os.symlink(venv_bin, configuration.venv_common_bin)
+        os.symlink(venv_bin, configuration.resolved_venv_common_bin())
 
     check_call(
         [
-            configuration.venv_python,
+            configuration.resolved_venv_python(),
             '-m', 'pip',
             'install',
             '--upgrade',
@@ -244,7 +244,7 @@ def sync_requirements(group, configuration):
     )
 
     env = dict(os.environ)
-    env.update(read_dot_env(configuration.dot_env))
+    env.update(read_dot_env(configuration.resolved_dot_env()))
 
     sync_requirements_file(
         env=env,
@@ -253,12 +253,12 @@ def sync_requirements(group, configuration):
     )
 
     requirements_path = os.path.join(
-        configuration.requirements_path,
+        configuration.resolved_requirements_path(),
         'local' + requirements_extensions[requirements_lock],
     )
     check_call(
         [
-            configuration.venv_python,
+            configuration.resolved_venv_python(),
             '-m', 'pip',
             'install',
             '--no-deps',
@@ -272,7 +272,7 @@ def sync_requirements(group, configuration):
 def sync_requirements_file(env, requirements, configuration):
     check_call(
         [
-            os.path.join(configuration.venv_common_bin, 'pip-sync'),
+            os.path.join(configuration.resolved_venv_common_bin(), 'pip-sync'),
             requirements,
         ],
         cwd=configuration.project_root,
@@ -281,7 +281,7 @@ def sync_requirements_file(env, requirements, configuration):
 
 
 def linux_create(group, configuration):
-    venv_bin = os.path.join(configuration.venv_path, 'bin')
+    venv_bin = os.path.join(configuration.resolved_venv_path(), 'bin')
     python_path, = configuration.python_identifier.linux_command()
     common_create(
         group=group,
@@ -306,7 +306,7 @@ def windows_create(group, configuration):
     common_create(
         group=group,
         python=python_path,
-        venv_bin=configuration.venv_common_bin,
+        venv_bin=configuration.resolved_venv_common_bin(),
         symlink=False,
         configuration=configuration,
     )
@@ -314,14 +314,16 @@ def windows_create(group, configuration):
 
 def rm(ignore_missing, configuration):
     try:
-        rmtree(configuration.venv_path)
+        rmtree(configuration.resolved_venv_path())
     except OSError as e:
         if e.errno != errno.ENOENT:
             raise
 
         if not ignore_missing:
             raise ExitError(
-                'venv not found at: {}'.format(configuration.venv_path),
+                'venv not found at: {}'.format(
+                    configuration.resolved_venv_path(),
+                ),
             )
 
 
@@ -330,9 +332,9 @@ def lock(configuration):
         create(group=None, configuration=configuration)
 
     specification_paths = tuple(
-        os.path.join(configuration.requirements_path, filename)
+        os.path.join(configuration.resolved_requirements_path(), filename)
         for filename in glob.glob(
-            os.path.join(configuration.requirements_path, '*.in'),
+            os.path.join(configuration.resolved_requirements_path(), '*.in'),
         )
     )
 
@@ -355,7 +357,10 @@ def lock(configuration):
 
         check_call(
             [
-                os.path.join(configuration.venv_common_bin, 'pip-compile'),
+                os.path.join(
+                    configuration.resolved_venv_common_bin(),
+                    'pip-compile',
+                ),
                 '--output-file', out_path,
                 specification_path,
             ] + extras,
@@ -364,7 +369,7 @@ def lock(configuration):
 
 
 def venv_existed(configuration):
-    return os.path.exists(configuration.venv_path)
+    return os.path.exists(configuration.resolved_venv_path())
 
 
 def ensure(group, quick, configuration):
@@ -391,7 +396,10 @@ def clean_path(path):
 
 
 def check(configuration):
-    activate = os.path.join(configuration.venv_common_bin, 'activate')
+    activate = os.path.join(
+        configuration.resolved_venv_common_bin(),
+        'activate',
+    )
     expected_name = 'VIRTUAL_ENV'
 
     # try:
@@ -417,11 +425,15 @@ def check(configuration):
     #
     #     raise
 
-    if clean_path(configuration.venv_path) != clean_path(original_venv_path):
+    moved = (
+        clean_path(configuration.resolved_venv_path())
+        != clean_path(original_venv_path)
+    )
+    if moved:
         raise ExitError(
             'venv should be at "{}" but has been moved to "{}"'.format(
                 original_venv_path,
-                configuration.venv_path,
+                configuration.resolved_venv_path(),
             ),
         )
 
@@ -465,11 +477,14 @@ def build(configuration):
     for command in configuration.dist_commands:
         check_call(
             [
-                resolve_path(configuration.venv_common_bin, 'python'),
+                resolve_path(
+                    configuration.resolved_venv_common_bin(),
+                    'python',
+                ),
                 resolve_path(configuration.project_root, 'setup.py'),
                 command,
                 '--dist-dir',
-                configuration.dist_dir,
+                configuration.resolved_dist_dir(),
             ],
         )
 
@@ -500,9 +515,9 @@ def publish(force, configuration):
 
     check_call(
         [
-            resolve_path(configuration.venv_common_bin, 'twine'),
+            resolve_path(configuration.resolved_venv_common_bin(), 'twine'),
             'upload',
-            resolve_path(configuration.dist_dir, '*'),
+            resolve_path(configuration.resolved_dist_dir(), '*'),
         ],
     )
 
@@ -547,7 +562,9 @@ class PythonIdentifier:
     def from_string(cls, identifier_string):
         bit_split = '-'
 
-        version_string, split, bit_width = identifier_string.rpartition(bit_split)
+        version_string, split, bit_width = identifier_string.rpartition(
+            bit_split,
+        )
 
         if split == bit_split:
             bit_width = int(bit_width)
@@ -652,17 +669,18 @@ class Configuration:
         self.python_identifier = python_identifier
         self.default_group = default_group
         self.pre_group = pre_group
+        self.update_url = update_url
+        self.dist_commands = dist_commands
+        self.use_hashes = use_hashes
+        self.platform = platform
+
         self.requirements_path = requirements_path
         self.dot_env = dot_env
         self.venv_path = venv_path
         self.venv_common_bin = venv_common_bin
         self.venv_python = venv_python
         self.venv_prompt = venv_prompt
-        self.update_url = update_url
-        self.dist_commands = dist_commands
         self.dist_dir = dist_dir
-        self.use_hashes = use_hashes
-        self.platform = platform
 
     @classmethod
     def from_setup_cfg(cls, path):
@@ -691,58 +709,54 @@ class Configuration:
             identifier_string=c['python_identifier'],
         )
 
-        venv_path = resolve_path(
-            reference_path,
-            c['venv_path'],
-        )
-
-        venv_common_bin = resolve_path(
-            venv_path,
-            c['venv_common_bin'],
-        )
-
-        project_root = c['project_root']
-
-        venv_prompt = c['venv_prompt']
-        if venv_prompt is None:
-            venv_prompt = '{} - {}'.format(
-                os.path.basename(project_root),
-                os.path.basename(venv_path),
-            )
-
-        dist_dir = resolve_path(
-            reference_path,
-            c['dist_dir'],
-        )
-
         use_hashes = parse_boolean_string(c['use_hashes'])
 
+        platform = get_platform()
+
         return cls(
-            project_root=project_root,
+            project_root=c['project_root'],
             python_identifier=python_identifier,
             default_group=c['default_group'],
             pre_group=c['pre_group'],
-            requirements_path=resolve_path(
-                reference_path,
-                c['requirements_path'],
-            ),
-            dot_env=resolve_path(
-                reference_path,
-                c['dot_env'],
-            ),
-            venv_path=venv_path,
-            venv_common_bin=venv_common_bin,
-            venv_python=resolve_path(
-                venv_common_bin,
-                c['venv_python'],
-            ),
-            venv_prompt=venv_prompt,
+            requirements_path=c['requirements_path'],
+            dot_env=c['dot_env'],
+            venv_path=c['venv_path'],
+            venv_common_bin=c['venv_common_bin'],
+            venv_python=c['venv_python'],
+            venv_prompt=c['venv_prompt'],
             update_url=c['update_url'],
             dist_commands=c['dist_commands'],
-            dist_dir=dist_dir,
+            dist_dir=c['dist_dir'],
             use_hashes=use_hashes,
-            platform=get_platform(),
+            platform=platform,
         )
+
+    def resolved_dist_dir(self):
+        return resolve_path(self.project_root, self.dist_dir)
+
+    def resolved_dot_env(self):
+        return resolve_path(self.project_root, self.dot_env)
+
+    def resolved_requirements_path(self):
+        return resolve_path(self.project_root, self.requirements_path)
+
+    def resolved_venv_path(self):
+        return resolve_path(self.project_root, self.venv_path)
+
+    def resolved_venv_common_bin(self):
+        return resolve_path(self.resolved_venv_path(), self.venv_common_bin)
+
+    def resolved_venv_python(self):
+        return resolve_path(self.resolved_venv_common_bin(), self.venv_python)
+
+    def resolved_venv_prompt(self):
+        if self.venv_prompt is None:
+            return '{} - {}'.format(
+                os.path.basename(self.project_root),
+                os.path.basename(self.resolved_venv_path()),
+            )
+
+        return self.venv_prompt
 
 
 def main():
@@ -849,7 +863,7 @@ def main():
     pick_parser.add_argument(
         '--destination',
         default=resolve_path(
-            configuration.requirements_path,
+            configuration.resolved_requirements_path(),
             'picked' + requirements_extensions[requirements_lock],
         ),
         help='The path to copy the picked lock file to',
