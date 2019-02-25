@@ -203,13 +203,16 @@ def common_create(
             else:
                 raise
 
+    extras = []
+    if configuration.python_identifier.version >= (3, 6):
+        extras.extend(('--prompt', configuration.resolved_venv_prompt()))
+
     check_call(
         [
             python,
             '-m', 'venv',
-            '--prompt', configuration.resolved_venv_prompt(),
             configuration.resolved_venv_path(),
-        ],
+        ] + extras,
         cwd=configuration.project_root,
         env=env,
     )
