@@ -915,7 +915,10 @@ def main():
     # false value to the environment variable
     os.environ['PIP_NO_WARN_SCRIPT_LOCATION'] = '0'
 
-    args.func(configuration=configuration, **cleaned)
+    if args.func != parser.print_help:
+        cleaned['configuration'] = configuration
+
+    args.func(**cleaned)
 
 
 # http://stackoverflow.com/a/21263493/228539
