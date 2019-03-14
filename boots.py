@@ -262,17 +262,18 @@ def sync_requirements(group, configuration):
         configuration.resolved_requirements_path(),
         'local' + requirements_extensions[requirements_lock],
     )
-    check_call(
-        [
-            configuration.resolved_venv_python(),
-            '-m', 'pip',
-            'install',
-            '--no-deps',
-            '--requirement', requirements_path,
-        ],
-        cwd=configuration.project_root,
-        env=env,
-    )
+    if os.path.isfile(requirements_path):
+        check_call(
+            [
+                configuration.resolved_venv_python(),
+                '-m', 'pip',
+                'install',
+                '--no-deps',
+                '--requirement', requirements_path,
+            ],
+            cwd=configuration.project_root,
+            env=env,
+        )
 
 
 def sync_requirements_file(env, requirements, configuration):
