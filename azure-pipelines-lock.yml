@@ -31,11 +31,14 @@ jobs:
       - bash: |
           sleep 60
       - template: azure/templates/steps/locks_from_artifact.yml
-        - artifact.name: '0_0'
+        parameters:
+          artifact.name: '0_0'
       - template: azure/templates/steps/locks_from_artifact.yml
-        - artifact.name: '1_0'
+        parameters:
+          artifact.name: '1_0'
       - template: azure/templates/steps/locks_from_artifact.yml
-        - artifact.name: '2_0'
+        parameters:
+          artifact.name: '2_0'
       - bash: |
           ls -la
           ls -la requirements
