@@ -1,17 +1,22 @@
 jobs:
-  - job: lock
-    displayName: pip-compile requirements
-    pool:
+  - template: azure/templates/jobs/get_in_archive.yml
+    parameters:
+      job: get_input_archive
+
+  - template: azure/templates/jobs/lock.yml
+    parameters:
+      platform: Linux
       vmImage: 'ubuntu-16.04'
-    steps:
-      - task: UsePythonVersion@0
-        inputs:
-          versionSpec: '3.6'
-          architecture: 'x64'
-      - bash: |
-          curl --silent --show-error '$(BOOTS_ARCHIVE_URL)' | tar --extract --verbose
-          python boots.py lock
-          tar --create --gzip --file locked.tar.gz requirements/*.txt
-      - task: PublishPipelineArtifact@0
-        inputs:
-          targetPath: '$(System.DefaultWorkingDirectory)/locked.tar.gz'
+      dependsOn: get_input_archive
+
+  - template: azure/templates/jobs/lock.yml
+    parameters:
+      platform: macOS
+      vmImage: 'macOS-10.13'
+      dependsOn: get_input_archive
+
+  - template: azure/templates/jobs/lock.yml
+    parameters:
+      platform: Windows
+      vmImage: 'vs2017-win2016'
+      dependsOn: get_input_archive

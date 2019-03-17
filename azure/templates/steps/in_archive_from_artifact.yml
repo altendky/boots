@@ -1,0 +1,7 @@
+steps:
+  - task: DownloadPipelineArtifact@0
+    inputs:
+      artifactName: 'input.tar.gz'
+      targetPath: $(System.DefaultWorkingDirectory)
+  - bash: |
+      tar --extract --verbose --file input.tar.gz

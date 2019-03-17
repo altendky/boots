@@ -1,0 +1,9 @@
+jobs:
+  - job: ${{ parameters.job }}
+    displayName: Get input archive
+    steps:
+      - bash: |
+          curl --silent --show-error '$(BOOTS_ARCHIVE_URL)' --output input.tar.gz
+      - task: PublishPipelineArtifact@0
+        inputs:
+          targetPath: '$(System.DefaultWorkingDirectory)/input.tar.gz'

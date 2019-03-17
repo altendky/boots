@@ -1,0 +1,18 @@
+jobs:
+  - job: lock_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}
+    displayName: Lock ${{ parameters.platform }} ${{ parameters.versionSpec }} ${{ parameters.architecture }}
+    dependsOn: ${{ parameters.dependsOn }}
+    pool:
+      vmImage: ${{ parameters.vmImage }}
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: ${{ parameters.versionSpec }}
+          architecture: ${{ parameters.architecture }}
+      - template: ../steps/in_archive_from_artifact.yml
+      - bash: |
+          python boots.py lock
+          tar --create --gzip --file lock_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}.tar.gz requirements/*.txt
+      - task: PublishPipelineArtifact@0
+        inputs:
+          targetPath: '$(System.DefaultWorkingDirectory)/lock_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}.tar.gz'
