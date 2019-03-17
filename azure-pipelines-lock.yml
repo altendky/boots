@@ -28,7 +28,7 @@ jobs:
           sleep 60
       - task: DownloadPipelineArtifact@0
         inputs:
-          artifactName: ''
+          artifactName: 'blue'
           itemPattern: 'lock*/**'
           targetPath: $(System.DefaultWorkingDirectory)
       - bash: |
