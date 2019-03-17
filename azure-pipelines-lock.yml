@@ -15,4 +15,4 @@ jobs:
       - task: PublishPipelineArtifact@0
         inputs:
           artifactName: 'locked.tar.gz'
-          targetPath: '$(System.DefaultWorkingDirectory)/locked.tar.gz'
+          targetPath: '$(System.DefaultWorkingDirectory)'
