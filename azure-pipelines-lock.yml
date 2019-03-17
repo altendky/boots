@@ -32,13 +32,13 @@ jobs:
           sleep 60
       - template: azure/templates/steps/locks_from_artifact.yml
         parameters:
-          artifact.name: '0_0'
+          artifactName: '0_0'
       - template: azure/templates/steps/locks_from_artifact.yml
         parameters:
-          artifact.name: '1_0'
+          artifactName: '1_0'
       - template: azure/templates/steps/locks_from_artifact.yml
         parameters:
-          artifact.name: '2_0'
+          artifactName: '2_0'
       - bash: |
           ls -la
           ls -la requirements
