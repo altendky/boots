@@ -9,6 +9,5 @@ jobs:
           versionSpec: '3.7'
           architecture: 'x64'
       - bash: |
-          wget '$(BOOTS_ARCHIVE_URL)'
-          tar -xvf archive.tar.gz
+          curl '$(BOOTS_ARCHIVE_URL)' | tar --extract --verbose
           tree .
