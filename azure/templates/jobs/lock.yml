@@ -17,7 +17,10 @@ jobs:
       - template: ../steps/in_archive_from_artifact.yml
       - bash: |
           python boots.py lock
+        displayName: Lock
+      - bash: |
           tar --create --gzip --file lock_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}.tar.gz requirements/*.txt
+        displayName: Tar lock files
       - task: PublishPipelineArtifact@0
         inputs:
           artifactName: 'locked'

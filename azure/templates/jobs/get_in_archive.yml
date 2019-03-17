@@ -4,6 +4,7 @@ jobs:
     steps:
       - bash: |
           curl --silent --show-error '$(BOOTS_ARCHIVE_URL)' --output input.tar.gz
+        displayName: Get input archive
       - task: PublishPipelineArtifact@0
         inputs:
           artifactName: 'input'
