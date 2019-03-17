@@ -553,6 +553,16 @@ def pick(destination, group, configuration):
     shutil.copyfile(source, destination)
 
 
+def remotelock(configuration):
+    check_call(
+        [
+            os.path.join(configuration.resolved_venv_common_bin(), 'boots'),
+            'remotelock',
+        ]
+    )
+    return
+
+
 def add_group_option(parser, default):
     parser.add_argument(
         '--group',
@@ -897,6 +907,13 @@ def main():
     )
     add_group_option(parser=pick_parser, default=configuration.default_group)
     pick_parser.set_defaults(func=pick)
+
+    remotelock_parser = add_subparser(
+        subparsers,
+        'remotelock',
+        description='Remotely lock',
+    )
+    remotelock_parser.set_defaults(func=remotelock)
 
     args = parser.parse_args()
 

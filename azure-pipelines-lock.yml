@@ -9,4 +9,6 @@ jobs:
           versionSpec: '3.7'
           architecture: 'x64'
       - bash: |
-          set
+          wget '$(BOOTS_ARCHIVE_URL)'
+          tar -xvf archive.tar.gz
+          tree .
