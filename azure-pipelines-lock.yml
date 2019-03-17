@@ -14,5 +14,5 @@ jobs:
           tar --create --gzip --file locked.tar.gz requirements/*.txt
       - task: PublishPipelineArtifact@0
         inputs:
-          artifactName: 'locked.tar.gz'
-          targetPath: '$(System.DefaultWorkingDirectory)'
+          artifactName: 'locked'
+          targetPath: '$(System.DefaultWorkingDirectory)/locked.tar.gz'
