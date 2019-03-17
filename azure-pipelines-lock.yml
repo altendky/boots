@@ -20,3 +20,14 @@ jobs:
       platform: Windows
       vmImage: 'vs2017-win2016'
       dependsOn: get_input_archive
+  - job: collect
+    displayName: Collect all lock files
+    dependsOn: *
+    steps:
+      - task: DownloadPipelineArtifact@0
+        inputs:
+          artifactName: ''
+          itemParameter: 'lock*/**'
+          targetPath: $(System.DefaultWorkingDirectory)
+      - bash: |
+          ls -la
