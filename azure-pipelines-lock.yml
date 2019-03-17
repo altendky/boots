@@ -29,7 +29,6 @@ jobs:
       - task: DownloadPipelineArtifact@1
         inputs:
           artifactName: 'input'
-          itemPattern: '**'
           targetPath: $(System.DefaultWorkingDirectory)
       - bash: |
           ls -la
