@@ -22,13 +22,14 @@ jobs:
       dependsOn: get_input_archive
   - job: collect
     displayName: Collect all lock files
+    dependsOn: get_input_archive
     steps:
       - bash: |
           sleep 60
       - task: DownloadPipelineArtifact@0
         inputs:
           artifactName: ''
-          itemPattern: '**'
+          itemPattern: 'lock*/**'
           targetPath: $(System.DefaultWorkingDirectory)
       - bash: |
           ls -la
