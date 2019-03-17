@@ -20,7 +20,7 @@ jobs:
           python boots.py lock
         displayName: Lock
       - bash: |
-          tar --create --gzip --file lock_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}.tar.gz requirements/*.txt
+          tar --create --gzip --file lock.tar.gz requirements/*.txt
         displayName: Tar lock files
       - task: PublishPipelineArtifact@0
         inputs:
