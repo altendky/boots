@@ -26,7 +26,7 @@ jobs:
     steps:
       - bash: |
           sleep 60
-      - task: DownloadPipelineArtifact@0
+      - task: DownloadPipelineArtifact@1
         inputs:
           artifactName: 'blue'
           itemPattern: 'lock*/**'
