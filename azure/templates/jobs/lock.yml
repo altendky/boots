@@ -4,11 +4,16 @@ jobs:
     dependsOn: ${{ parameters.dependsOn }}
     pool:
       vmImage: ${{ parameters.vmImage }}
+    strategy:
+      matrix:
+        3.6:
+          versionSpec: '3.6'
+          architecture: 'x64'
     steps:
       - task: UsePythonVersion@0
         inputs:
-          versionSpec: ${{ parameters.versionSpec }}
-          architecture: ${{ parameters.architecture }}
+          versionSpec: $(versionSpec)
+          architecture: $(architecture)
       - template: ../steps/in_archive_from_artifact.yml
       - bash: |
           python boots.py lock
