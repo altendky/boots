@@ -27,7 +27,7 @@ jobs:
       - task: DownloadPipelineArtifact@0
         inputs:
           artifactName: ''
-          itemParameter: 'lock*/**'
+          itemPattern: 'lock*/**'
           targetPath: $(System.DefaultWorkingDirectory)
       - bash: |
           ls -la
