@@ -9,6 +9,7 @@ jobs:
         3.6:
           versionSpec: '3.6'
           architecture: 'x64'
+          artifact_id: ${{ parameters.artifact_id }}_0
     steps:
       - task: UsePythonVersion@0
         inputs:
@@ -23,5 +24,5 @@ jobs:
         displayName: Tar lock files
       - task: PublishPipelineArtifact@0
         inputs:
-          artifactName: 'locked_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}'
-          targetPath: '$(System.DefaultWorkingDirectory)/lock_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}.tar.gz'
+          artifactName: $(artifact_id)
+          targetPath: 'lock.tar.gz'

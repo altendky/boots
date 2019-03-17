@@ -8,27 +8,34 @@ jobs:
       platform: Linux
       vmImage: 'ubuntu-16.04'
       dependsOn: get_input_archive
+      artifact_id: '0'
 
   - template: azure/templates/jobs/lock.yml
     parameters:
       platform: macOS
       vmImage: 'macOS-10.13'
       dependsOn: get_input_archive
+      artifact_id: '1'
 
   - template: azure/templates/jobs/lock.yml
     parameters:
       platform: Windows
       vmImage: 'vs2017-win2016'
       dependsOn: get_input_archive
+      artifact_id: '2'
+
   - job: collect
     displayName: Collect all lock files
     dependsOn: get_input_archive
     steps:
       - bash: |
           sleep 60
-      - task: DownloadPipelineArtifact@0
-        inputs:
-          artifactName: 'input'
-          targetPath: $(System.DefaultWorkingDirectory)
+      - template: azure/templates/steps/locks_from_artifact.yml
+        - artifact.name: '0_0'
+      - template: azure/templates/steps/locks_from_artifact.yml
+        - artifact.name: '1_0'
+      - template: azure/templates/steps/locks_from_artifact.yml
+        - artifact.name: '2_0'
       - bash: |
           ls -la
+          ls -la requirements
