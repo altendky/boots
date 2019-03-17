@@ -20,4 +20,5 @@ jobs:
           tar --create --gzip --file lock_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}.tar.gz requirements/*.txt
       - task: PublishPipelineArtifact@0
         inputs:
+          artifactName: 'locked'
           targetPath: '$(System.DefaultWorkingDirectory)/lock_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}.tar.gz'

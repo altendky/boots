@@ -6,4 +6,5 @@ jobs:
           curl --silent --show-error '$(BOOTS_ARCHIVE_URL)' --output input.tar.gz
       - task: PublishPipelineArtifact@0
         inputs:
+          artifactName: 'input'
           targetPath: '$(System.DefaultWorkingDirectory)/input.tar.gz'
