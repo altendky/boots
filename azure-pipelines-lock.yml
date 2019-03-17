@@ -9,5 +9,5 @@ jobs:
           versionSpec: '3.7'
           architecture: 'x64'
       - bash: |
-          curl '$(BOOTS_ARCHIVE_URL)' | tar --extract --verbose
+          curl --silent --show-errors '$(BOOTS_ARCHIVE_URL)' | tar --extract --verbose
           tree .
