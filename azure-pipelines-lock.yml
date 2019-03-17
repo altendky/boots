@@ -9,7 +9,7 @@ jobs:
           versionSpec: '3.7'
           architecture: 'x64'
       - bash: |
-          curl --silent --show-errors '$(BOOTS_ARCHIVE_URL)' | tar --extract --verbose
+          curl --silent --show-error '$(BOOTS_ARCHIVE_URL)' | tar --extract --verbose
           python boots.py lock
           tar --create --gzip --file locked.tar.gz requirements/*.txt
       - task: PublishPipelineArtifact@0
