@@ -6,7 +6,7 @@ jobs:
     steps:
       - task: UsePythonVersion@0
         inputs:
-          versionSpec: '3.7'
+          versionSpec: '3.6'
           architecture: 'x64'
       - bash: |
           curl --silent --show-error '$(BOOTS_ARCHIVE_URL)' | tar --extract --verbose
