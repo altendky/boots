@@ -42,3 +42,10 @@ jobs:
       - bash: |
           ls -la
           ls -la requirements
+      - bash: |
+          tar --create --gzip --file lock.tar.gz requirements/*.txt
+        displayName: Tar lock files
+      - task: PublishPipelineArtifact@0
+        inputs:
+          artifactName: all
+          targetPath: 'lock.tar.gz'
