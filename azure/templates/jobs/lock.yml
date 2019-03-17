@@ -23,5 +23,5 @@ jobs:
         displayName: Tar lock files
       - task: PublishPipelineArtifact@0
         inputs:
-          artifactName: 'locked'
-          targetPath: '$(System.DefaultWorkingDirectory)/lock_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}.tar.gz'
+          artifactName: 'locked_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}'
+          targetPath: '$(System.DefaultWorkingDirectory)/locked.tar.gz'
