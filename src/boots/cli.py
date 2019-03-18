@@ -20,9 +20,12 @@ def remotelock(personal_access_token):
     archive_bytes = boots._core.make_remote_lock_archive()
     archive_url = boots._core.post_file(data=archive_bytes)
     print(archive_url)
-    build_url = boots._core.request_remote_lock_build(
+    build = boots._core.request_remote_lock_build(
         archive_url=archive_url,
         username='altendky',
         personal_access_token=personal_access_token,
     )
-    print(build_url)
+
+    build.wait_for_lock_build()
+
+    build.get_lock_build_artifact()

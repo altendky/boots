@@ -3,13 +3,16 @@
 from __future__ import print_function
 
 import argparse
+import base64
 import collections
 try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
 import errno
+import getpass
 import glob
+import json
 import os
 import os.path
 import shlex
@@ -19,10 +22,26 @@ import subprocess
 import sys
 import tempfile
 import time
-try:
-    from urllib.request import urlopen
-except ImportError:
-    from urllib2 import urlopen
+
+python2 = (2,) <= sys.version_info < (3,)
+python3 = (3,) <= sys.version_info
+
+if python2:
+    from urllib2 import (
+        Request,
+        urlopen,
+        HTTPPasswordMgrWithDefaultRealm,
+        HTTPBasicAuthHandler,
+        build_opener,
+    )
+else:
+    from urllib.request import (
+        Request,
+        urlopen,
+        HTTPPasswordMgrWithDefaultRealm,
+        HTTPBasicAuthHandler,
+        build_opener,
+    )
 
 
 py3 = sys.version_info[0] == 3
@@ -551,6 +570,194 @@ def pick(destination, group, configuration):
     print('     source: ' + source)
     print('destination: ' + destination)
     shutil.copyfile(source, destination)
+
+
+# TODO: CAMPid 0743105874017581374310081
+def make_remote_lock_archive():
+    import tarfile
+    import io
+
+    archive_file = io.BytesIO()
+
+    archive = tarfile.TarFile(mode='w', fileobj=archive_file)
+
+    patterns = (
+        'boots.py',
+        'setup.cfg',
+        'requirements/*.in',
+    )
+
+    for pattern in patterns:
+        for path in glob.glob(pattern):
+            archive.add(path)
+
+    archive.close()
+
+    return archive_file.getvalue()
+
+if True:
+    import mimetypes
+    import random
+    import string
+
+    _BOUNDARY_CHARS = string.digits + string.ascii_letters
+
+
+    def encode_multipart(fields={}, files={}, boundary=None):
+        r"""Encode dict of form fields and dict of files as multipart/form-data.
+        Return tuple of (body_string, headers_dict). Each value in files is a dict
+        with required keys 'filename' and 'content', and optional 'mimetype' (if
+        not specified, tries to guess mime type or uses 'application/octet-stream').
+
+        >>> body, headers = encode_multipart({'FIELD': 'VALUE'},
+        ...                                  {'FILE': {'filename': 'F.TXT', 'content': 'CONTENT'}},
+        ...                                  boundary='BOUNDARY')
+        >>> print('\n'.join(repr(l) for l in body.split('\r\n')))
+        '--BOUNDARY'
+        'Content-Disposition: form-data; name="FIELD"'
+        ''
+        'VALUE'
+        '--BOUNDARY'
+        'Content-Disposition: form-data; name="FILE"; filename="F.TXT"'
+        'Content-Type: text/plain'
+        ''
+        'CONTENT'
+        '--BOUNDARY--'
+        ''
+        >>> print(sorted(headers.items()))
+        [('Content-Length', '193'), ('Content-Type', 'multipart/form-data; boundary=BOUNDARY')]
+        >>> len(body)
+        193
+        """
+
+        def escape_quote(s):
+            return s.replace('"', '\\"')
+
+        if boundary is None:
+            boundary = ''.join(
+                random.choice(_BOUNDARY_CHARS) for i in range(30))
+        lines = []
+
+        for name, value in fields.items():
+            lines.extend((
+                '--{0}'.format(boundary),
+                'Content-Disposition: form-data; name="{0}"'.format(
+                    escape_quote(name)),
+                '',
+                str(value),
+            ))
+
+        for name, value in files.items():
+            filename = value['filename']
+            if 'mimetype' in value:
+                mimetype = value['mimetype']
+            else:
+                mimetype = mimetypes.guess_type(filename)[
+                               0] or 'application/octet-stream'
+            lines.extend((
+                '--{0}'.format(boundary),
+                'Content-Disposition: form-data; name="{0}"; filename="{1}"'.format(
+                    escape_quote(name), escape_quote(filename)),
+                'Content-Type: {0}'.format(mimetype),
+                '',
+                value['content'],
+            ))
+
+        lines.extend((
+            '--{0}--'.format(boundary),
+            '',
+        ))
+        body = '\r\n'.join(lines)
+
+        headers = {
+            'Content-Type': 'multipart/form-data; boundary={0}'.format(
+                boundary),
+            'Content-Length': str(len(body)),
+        }
+
+        return (body, headers)
+
+
+def _post_file(data):
+    print('post_file(): len(data):', len(data))
+
+    lines = (
+        b'Content-Disposition: form-data; name="file"; filename="archive.tar.gz"',
+        b'Content-Type: application/octet-stream',
+        b'',
+        data,
+    )
+
+    body = b'\r\n'.join(lines)
+
+    request = Request(
+        url='https://file.io/?expires=1w',
+        headers={
+            'Content-Length': len(body),
+            'Content-Type': 'multipart/form-data',
+        },
+        data=body,
+    )
+    result = urlopen(request)
+    print('post_file(): result.code:', result.code)
+    body = result.read()
+    print('post_file(): body:', body)
+    url = json.loads(body)['link']
+    return url
+
+
+def post_file(data):
+    fields = {}
+    files = {'file': {'filename': 'archive.tar.gz', 'content': data}}
+    body, headers = encode_multipart(files={'FILE': {'filename': 'archive.tar.gz', 'content': data}})
+
+    request = Request(
+        url='https://file.io/?expires=1w',
+        # body=
+    )
+
+
+def _remotelock(configuration):
+    configuration.resolved_venv_python
+    archive_data = make_remote_lock_archive()
+    archive_url = post_file(data=archive_data)
+    print('archive_url:', archive_url)
+
+    username = input('Username: ')
+    password = getpass.getpass()
+
+    import urllib
+
+    top_level_url = "https://dev.azure.com"
+    url = top_level_url + '/altendky/boots/_apis/build/builds?api-version=5.0'
+
+    password_mgr = HTTPPasswordMgrWithDefaultRealm()
+    password_mgr.add_password(None, url, username, password)
+    handler = HTTPBasicAuthHandler(password_mgr)
+    opener = build_opener(handler)
+
+    parameters = {'MY_PARAMETER': 'my_value'}
+    values = {
+        "definition": {"id": 2},
+        "sourceBranch": "lock_in_azure",
+        "parameters": json.dumps(parameters),
+    }
+    data = json.dumps(values).encode('ascii')
+
+    request = Request(
+        url=url,
+        data=data,
+        headers={
+            'Authorization': 'Basic {}'.format(base64.standard_b64encode(':'.join((username, password)).encode('ascii'))),
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+    )
+    result = opener.open(request)
+
+    print(result.status)
+    json_result = json.loads(result.read())
+    print(json.dumps(json_result, indent=4))
 
 
 def remotelock(configuration):
