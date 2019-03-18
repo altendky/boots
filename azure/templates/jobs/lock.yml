@@ -19,10 +19,10 @@ jobs:
       - bash: |
           python boots.py lock
         displayName: Lock
-      - bash: |
-          tar --create --gzip --file lock.tar.gz requirements/*.txt
-        displayName: Tar lock files
-      - task: PublishPipelineArtifact@0
+#      - bash: |
+#          tar --create --gzip --file lock.tar.gz requirements/*.txt
+#        displayName: Tar lock files
+      - task: PublishBuildArtifacts@1
         inputs:
-          artifactName: $(artifact_id)
-          targetPath: 'lock.tar.gz'
+          pathToPublish: 'requirements/*.txt'
+          artifactName: lock_files
