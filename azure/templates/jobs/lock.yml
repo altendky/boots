@@ -22,7 +22,11 @@ jobs:
 #      - bash: |
 #          tar --create --gzip --file lock.tar.gz requirements/*.txt
 #        displayName: Tar lock files
+      - task: CopyFiles@2
+        inputs:
+          contents: 'requirements\*.txt'
+          targetFolder: $(Build.ArtifactStagingDirectory)
       - task: PublishBuildArtifacts@1
         inputs:
-          pathToPublish: '$(System.DefaultWorkingDirectory)/requirements/*.txt'
+          pathToPublish: $(Build.ArtifactStagingDirectory)
           artifactName: lock_files
