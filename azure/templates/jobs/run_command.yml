@@ -22,7 +22,7 @@ jobs:
           architecture: $(architecture)
       - template: ../steps/in_archive_from_artifact.yml
       - bash: |
-          ${{ command }}
+          ${{ parameters.command }}
         displayName: Lock
       - task: CopyFiles@2
         inputs:
