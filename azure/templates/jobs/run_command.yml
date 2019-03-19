@@ -12,8 +12,10 @@ jobs:
           architecture: 'x64'
     steps:
       - bash: |
-          echo '##vso[task.setvariable variable=agent.jobstatus;]canceled'
-          echo '##vso[task.complete result=Canceled;]DONE'
+          if [[ "|${{ parameters.platform }}-$(versionSpec)-" == *"${{ parameters.environments }}"* ]]; then
+            echo '##vso[task.setvariable variable=agent.jobstatus;]canceled'
+            echo '##vso[task.complete result=Canceled;]DONE'
+          fi
         condition: not(contains('${{ parameters.environments }}', '|${{ parameters.platform }}-$(versionSpec)-'))
         displayName: Skip if not requested
       - task: UsePythonVersion@0
