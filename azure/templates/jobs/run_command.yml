@@ -2,7 +2,7 @@ jobs:
   - job: lock_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}
     displayName: Lock ${{ parameters.platform }} ${{ parameters.versionSpec }} ${{ parameters.architecture }}
     dependsOn: ${{ parameters.dependsOn }}
-    condition: contains('${{ parameters.environments }}', format('|{0}-', '${{ parameters.platform }}'))
+    condition: contains('${{ parameters.environments }}', '|${{ parameters.platform }}-'))
     pool:
       vmImage: ${{ parameters.vmImage }}
     strategy:
@@ -14,7 +14,7 @@ jobs:
       - bash: |
           echo '##vso[task.setvariable variable=agent.jobstatus;]canceled'
           echo '##vso[task.complete result=Canceled;]DONE'
-        condition: not(contains('${{ parameters.environments }}', format('|{0}-{1}-', '${{ parameters.platform }}', '$(versionSpec)')))
+        condition: not(contains('${{ parameters.environments }}', '|${{ parameters.platform }}-$(versionSpec)-'))
         displayName: Skip if not requested
       - task: UsePythonVersion@0
         inputs:
