@@ -10,7 +10,7 @@ jobs:
       vmImage: 'ubuntu-16.04'
       dependsOn: get_input_archive
       command: $(BOOTS_COMMAND)
-      environments: $(boots_environments)
+      environments: $(BOOTS_ENVIRONMENTS)
 
   - template: azure/templates/jobs/run_command.yml
     parameters:
