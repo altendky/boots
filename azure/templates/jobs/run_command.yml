@@ -13,7 +13,7 @@ jobs:
       - bash: |
           echo "|${{ parameters.platform }}-$(versionSpec)-"
           echo "${{ parameters.environments }}"
-          if [[ "${{ parameters.environments }}" != *"|${{ parameters.platform }}-$(versionSpec)-"* ]]; then echo '##vso[task.setvariable variable=agent.jobstatus;]canceled'; echo '##vso[task.complete result=Canceled;]DONE'; fi
+          if [[ "${{ parameters.environments }}" != *"|${{ parameters.platform }}-$(versionSpec)-"* ]]; then echo '##vso[task.setvariable variable=agent.jobstatus;]Cancelled'; echo '##vso[task.complete result=Cancelled;]DONE'; fi
         displayName: Skip if not requested
       - task: UsePythonVersion@0
         inputs:
