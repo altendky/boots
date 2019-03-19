@@ -3,7 +3,7 @@ jobs:
     displayName: Get input archive
     steps:
       - bash: |
-          curl --silent --show-error '${{ archive_url }}' --output input.tar.gz
+          curl --silent --show-error '${{ parameters.archive_url }}' --output input.tar.gz
         displayName: Get input archive
       - task: PublishPipelineArtifact@0
         inputs:
