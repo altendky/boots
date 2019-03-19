@@ -2,7 +2,7 @@ jobs:
   - job: lock_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}
     displayName: Lock ${{ parameters.platform }} ${{ parameters.versionSpec }} ${{ parameters.architecture }}
     dependsOn: ${{ parameters.dependsOn }}
-    condition: contains(${{ parameters.platforms }}, format('|{0}-', '${{ parameters.platform }}'))
+    condition: contains('${{ parameters.environments }}', format('|{0}-', '${{ parameters.platform }}'))
     pool:
       vmImage: ${{ parameters.vmImage }}
     strategy:
