@@ -9,10 +9,10 @@ jobs:
       variable: BOOTS_ARCHIVE_URL
 
   - template: azure/templates/jobs/get_input_archive.yml
-    dependsOn: BOOTS_ARCHIVE_URL
     parameters:
       job: get_input_archive
       archive_url: ${{ dependencies.BOOTS_ARCHIVE_URL.outputs['v.v'] }}
+      dependsOn: BOOTS_ARCHIVE_URL
 
   - template: azure/templates/jobs/run_command.yml
     parameters:

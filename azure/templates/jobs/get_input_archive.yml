@@ -1,6 +1,7 @@
 jobs:
   - job: ${{ parameters.job }}
     displayName: Get input archive
+    dependsOn: ${{ parameters.dependsOn }}
     steps:
       - bash: |
           curl --silent --show-error '${{ parameters.archive_url }}' --output input.tar.gz
