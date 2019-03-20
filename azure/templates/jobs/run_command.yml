@@ -1,10 +1,10 @@
 jobs:
-- condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '|${{ parameters.environment }}')
+- job: ${{ parameters.job }}
+  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '|${{ parameters.environment }}')
   dependsOn:
     - BOOTS_COMMAND
     - BOOTS_ENVIRONMENTS
   displayName: ${{ parameters.displayName }}
-  job: ${{ parameters.job }}
   pool:
     vmImage: ${{ parameters.vmImage }}
   steps:
