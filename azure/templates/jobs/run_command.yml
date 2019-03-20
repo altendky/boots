@@ -8,21 +8,21 @@ jobs:
   pool:
     vmImage: ${{ parameters.vmImage }}
   steps:
-  - inputs:
+  - task: UsePythonVersion@0
+    inputs:
       architecture: ${{ parameters.architecture }}
       versionSpec: ${{ parameters.versionSpec }}
-    task: UsePythonVersion@0
   - template: ../steps/in_archive_from_artifact.yml
   - bash: ${{ dependencies.BOOTS_COMMAND.outputs['v.v'] }}
     displayName: Run Command
-  - inputs:
+  - task: CopyFiles@2
+    inputs:
       contents: requirements/*.txt
       targetFolder: $(Build.ArtifactStagingDirectory)
-    task: CopyFiles@2
-  - inputs:
+  - task: PublishBuildArtifacts@1
+    inputs:
       artifactName: results
       pathToPublish: $(Build.ArtifactStagingDirectory)
-    task: PublishBuildArtifacts@1
   strategy:
     matrix:
       linux_python_3_6_x64:
