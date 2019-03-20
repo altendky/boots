@@ -1,9 +1,7 @@
 jobs:
 - job: ${{ parameters.job }}
   condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '|${{ parameters.environment }}')
-  dependsOn:
-    - BOOTS_COMMAND
-    - BOOTS_ENVIRONMENTS
+  dependsOn: BOOTS_ENVIRONMENTS
   displayName: ${{ parameters.displayName }}
   pool:
     vmImage: ${{ parameters.vmImage }}
@@ -13,7 +11,7 @@ jobs:
       architecture: ${{ parameters.architecture }}
       versionSpec: ${{ parameters.versionSpec }}
   - template: ../steps/in_archive_from_artifact.yml
-  - bash: ${{ dependencies.BOOTS_COMMAND.outputs['v.v'] }}
+  - bash: $(BOOTS_COMMAND)
     displayName: Run Command
   - task: CopyFiles@2
     inputs:
