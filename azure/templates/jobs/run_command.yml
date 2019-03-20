@@ -1,15 +1,15 @@
 jobs:
-- job: ${{ parameters.job }}
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '|${{ parameters.environment }}')
+- job: $(job)
+  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '|$(parameters.environment)')
   dependsOn: BOOTS_ENVIRONMENTS
-  displayName: ${{ parameters.displayName }}
+  displayName: $(parameters.displayName)
   pool:
-    vmImage: ${{ parameters.vmImage }}
+    vmImage: $(vmImage)
   steps:
   - task: UsePythonVersion@0
     inputs:
-      architecture: ${{ parameters.architecture }}
-      versionSpec: ${{ parameters.versionSpec }}
+      architecture: $(architecture)
+      versionSpec: $(versionSpec)
   - template: ../steps/in_archive_from_artifact.yml
   - bash: $(BOOTS_COMMAND)
     displayName: Run Command
