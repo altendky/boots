@@ -1,5 +1,5 @@
 jobs:
-- job: $(job)
+- job: run_command
   condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '|$(parameters.environment)')
   dependsOn: BOOTS_ENVIRONMENTS
   displayName: $(parameters.displayName)
