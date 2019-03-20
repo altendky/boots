@@ -1,39 +1,20 @@
-variables:
-  archive_url: $(BOOTS_ARCHIVE_URL)
-  command: $(BOOTS_COMMAND)
-  environments: $(BOOTS_ENVIRONMENTS)
-
 jobs:
   - template: azure/templates/jobs/translate_environment_variable.yml
     parameters:
       variable: BOOTS_ARCHIVE_URL
 
+  - template: azure/templates/jobs/translate_environment_variable.yml
+    parameters:
+      variable: BOOTS_COMMAND
+
+  - template: azure/templates/jobs/translate_environment_variable.yml
+    parameters:
+      variable: BOOTS_ENVIRONMENTS
+
   - template: azure/templates/jobs/get_input_archive.yml
     parameters:
       job: get_input_archive
-      archive_url: ${{ dependencies.BOOTS_ARCHIVE_URL.outputs['v.v'] }}
-      dependsOn: BOOTS_ARCHIVE_URL
 
   - template: azure/templates/jobs/run_command.yml
     parameters:
-      platform: Linux
-      vmImage: 'ubuntu-16.04'
       dependsOn: get_input_archive
-      command: $(command)
-      environments: $(environments)
-
-  - template: azure/templates/jobs/run_command.yml
-    parameters:
-      platform: macOS
-      vmImage: 'macOS-10.13'
-      dependsOn: get_input_archive
-      command: $(command)
-      environments: $(environments)
-
-  - template: azure/templates/jobs/run_command.yml
-    parameters:
-      platform: Windows
-      vmImage: 'vs2017-win2016'
-      dependsOn: get_input_archive
-      command: $(command)
-      environments: $(environments)
