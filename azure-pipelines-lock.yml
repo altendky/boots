@@ -1,10 +1,6 @@
 jobs:
   - template: azure/templates/jobs/translate_environment_variable.yml
     parameters:
-      variable: BOOTS_ARCHIVE_URL
-
-  - template: azure/templates/jobs/translate_environment_variable.yml
-    parameters:
       variable: BOOTS_COMMAND
 
   - template: azure/templates/jobs/translate_environment_variable.yml

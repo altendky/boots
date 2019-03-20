@@ -1,10 +1,9 @@
 jobs:
   - job: ${{ parameters.job }}
     displayName: Get input archive
-    dependsOn: BOOTS_ARCHIVE_URL
     steps:
       - bash: |
-          curl --silent --show-error '${{ dependencies.BOOTS_ARCHIVE_URL.outputs['v.v'] }}' --output input.tar.gz
+          curl --silent --show-error "$(BOOTS_ARCHIVE_URL)" --output input.tar.gz
         displayName: Get input archive
       - task: PublishPipelineArtifact@0
         inputs:
