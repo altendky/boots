@@ -1,6 +1,6 @@
 jobs:
 - job: run_command
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], format('|{}', $(environment)))
+  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], format('|{}', environment))
   dependsOn: BOOTS_ENVIRONMENTS
   displayName: $(displayName)
   pool:
