@@ -3,6 +3,7 @@ import sys
 import attr
 import yaml
 
+yaml.add_representer(dict, lambda self, data: yaml.representer.SafeRepresenter.represent_dict(self, data.items()))
 
 @attr.s
 class Platform:
@@ -45,20 +46,20 @@ class MatrixJob:
             self.python_version.to_string(),
         )
 
-    def to_list(self):
-        return [
-            self.job_name(),
-            {
-                'platform': self.platform.name,
-                'vmImage': self.platform.vm_image,
-                'versionSpec': self.python_version.version_string(),
-                'architecture': self.python_version.architecture,
-                'displayName': self.display_name(),
-                'job': self.job_name(),
-                'environment': self.environment_string(),
+    def to_dict(self):
+        return {
+            "${{{{}} if contains(variables.BOOTS_ENVIRONMENTS, '|{}') }}}}".format(self.environment_string()): {
+                self.job_name(): {
+                    'platform': self.platform.name,
+                    'vmImage': self.platform.vm_image,
+                    'versionSpec': self.python_version.version_string(),
+                    'architecture': self.python_version.architecture,
+                    'displayName': self.display_name(),
+                    'job': self.job_name(),
+                    'environment': self.environment_string(),
+                },
             },
-        ]
-
+        }
 
 def main():
     platforms = [
@@ -79,9 +80,15 @@ def main():
         for python_version in python_versions
     ]
 
+    matrix_value = {}
+
+    for job in matrix_jobs:
+        matrix_value.update(job.to_dict())
+
     strategy = {
         'strategy': {
-            'matrix': dict(job.to_list() for job in matrix_jobs),
+            # 'matrix': dict(job.to_list() for job in matrix_jobs),
+            'matrix': matrix_value,
         },
     }
 
