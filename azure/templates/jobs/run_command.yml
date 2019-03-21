@@ -23,7 +23,7 @@ jobs:
       pathToPublish: $(Build.ArtifactStagingDirectory)
   strategy:
     matrix:
-      ${{} if contains(variables.BOOTS_ENVIRONMENTS, '|Linux_3.6-x64') }}:
+      ${{ if contains(variables.BOOTS_ENVIRONMENTS, '|Linux_3.6-x64') }}:
         linux_python_3_6_x64:
           architecture: x64
           displayName: 'Linux: Python 3.6-x64'
@@ -32,7 +32,7 @@ jobs:
           platform: Linux
           versionSpec: '3.6'
           vmImage: ubuntu-16.04
-      ${{} if contains(variables.BOOTS_ENVIRONMENTS, '|Linux_3.7-x64') }}:
+      ${{ if contains(variables.BOOTS_ENVIRONMENTS, '|Linux_3.7-x64') }}:
         linux_python_3_7_x64:
           architecture: x64
           displayName: 'Linux: Python 3.7-x64'
@@ -41,7 +41,7 @@ jobs:
           platform: Linux
           versionSpec: '3.7'
           vmImage: ubuntu-16.04
-      ${{} if contains(variables.BOOTS_ENVIRONMENTS, '|Windows_3.6-x64') }}:
+      ${{ if contains(variables.BOOTS_ENVIRONMENTS, '|Windows_3.6-x64') }}:
         windows_python_3_6_x64:
           architecture: x64
           displayName: 'Windows: Python 3.6-x64'
@@ -50,7 +50,7 @@ jobs:
           platform: Windows
           versionSpec: '3.6'
           vmImage: vs2017-win2016
-      ${{} if contains(variables.BOOTS_ENVIRONMENTS, '|Windows_3.7-x64') }}:
+      ${{ if contains(variables.BOOTS_ENVIRONMENTS, '|Windows_3.7-x64') }}:
         windows_python_3_7_x64:
           architecture: x64
           displayName: 'Windows: Python 3.7-x64'
@@ -59,7 +59,7 @@ jobs:
           platform: Windows
           versionSpec: '3.7'
           vmImage: vs2017-win2016
-      ${{} if contains(variables.BOOTS_ENVIRONMENTS, '|macOS_3.6-x64') }}:
+      ${{ if contains(variables.BOOTS_ENVIRONMENTS, '|macOS_3.6-x64') }}:
         macos_python_3_6_x64:
           architecture: x64
           displayName: 'macOS: Python 3.6-x64'
@@ -68,7 +68,7 @@ jobs:
           platform: macOS
           versionSpec: '3.6'
           vmImage: macOS-10.13
-      ${{} if contains(variables.BOOTS_ENVIRONMENTS, '|macOS_3.7-x64') }}:
+      ${{ if contains(variables.BOOTS_ENVIRONMENTS, '|macOS_3.7-x64') }}:
         macos_python_3_7_x64:
           architecture: x64
           displayName: 'macOS: Python 3.7-x64'
