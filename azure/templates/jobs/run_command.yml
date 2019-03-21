@@ -23,6 +23,15 @@ jobs:
       pathToPublish: $(Build.ArtifactStagingDirectory)
   strategy:
     matrix:
+      ${{ if contains('|Linux_3.6-x64', '|Linux_3.6-x64') }}:
+        force_linux_python_3_6_x64:
+          architecture: x64
+          displayName: 'force_Linux: Python 3.6-x64'
+          environment: force_Linux_3.6-x64
+          job: force_linux_python_3_6_x64
+          platform: force_Linux
+          versionSpec: '3.6'
+          vmImage: ubuntu-16.04
       ${{ if contains(variables.BOOTS_ENVIRONMENTS, '|Linux_3.6-x64') }}:
         linux_python_3_6_x64:
           architecture: x64
