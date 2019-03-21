@@ -49,7 +49,7 @@ class MatrixJob:
     def to_dict(self):
         return {
             # "${{{{ if contains(variables.BOOTS_ENVIRONMENTS, '|{}') }}}}".format(self.environment_string()): {
-            "${{{{ if contains(dependencies.BOOTS_ENVIRONMENTS['v.v'], '|{}') }}}}".format(self.environment_string()): {
+            # "${{{{ if contains(dependencies.BOOTS_ENVIRONMENTS['v.v'], '|{}') }}}}".format(self.environment_string()): {
                 self.job_name(): {
                     'platform': self.platform.name,
                     'vmImage': self.platform.vm_image,
@@ -59,7 +59,7 @@ class MatrixJob:
                     'job': self.job_name(),
                     'environment': self.environment_string(),
                 },
-            },
+            # },
         }
 
 def main():
