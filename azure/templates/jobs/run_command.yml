@@ -31,7 +31,7 @@ jobs:
         platform: Linux
         versionSpec: '3.6'
         vmImage: ubuntu-16.04
-      ${{ contains(variables.BOOTS_ENVIRONMENTS, '|Linux_3.7-x64') }}:
+      ${{ if contains(variables.BOOTS_ENVIRONMENTS, '|Linux_3.7-x64') }}:
         linux_python_3_7_x64:
           architecture: x64
           displayName: 'Linux: Python 3.7-x64'
