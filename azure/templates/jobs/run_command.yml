@@ -1,6 +1,6 @@
 jobs:
 - job: linux_python_3_6_x64
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '|Linux_3.6-x64')
+  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '|Linux_3.6-x64')
   dependsOn: BOOTS_ENVIRONMENTS
   displayName: 'Linux: Python 3.6-x64'
   pool:
@@ -22,7 +22,7 @@ jobs:
       artifactName: results
       pathToPublish: $(Build.ArtifactStagingDirectory)
 - job: linux_python_3_7_x64
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '|Linux_3.7-x64')
+  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '|Linux_3.7-x64')
   dependsOn: BOOTS_ENVIRONMENTS
   displayName: 'Linux: Python 3.7-x64'
   pool:
@@ -44,7 +44,7 @@ jobs:
       artifactName: results
       pathToPublish: $(Build.ArtifactStagingDirectory)
 - job: macos_python_3_6_x64
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '|macOS_3.6-x64')
+  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '|macOS_3.6-x64')
   dependsOn: BOOTS_ENVIRONMENTS
   displayName: 'macOS: Python 3.6-x64'
   pool:
@@ -66,7 +66,7 @@ jobs:
       artifactName: results
       pathToPublish: $(Build.ArtifactStagingDirectory)
 - job: macos_python_3_7_x64
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '|macOS_3.7-x64')
+  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '|macOS_3.7-x64')
   dependsOn: BOOTS_ENVIRONMENTS
   displayName: 'macOS: Python 3.7-x64'
   pool:
@@ -88,7 +88,7 @@ jobs:
       artifactName: results
       pathToPublish: $(Build.ArtifactStagingDirectory)
 - job: windows_python_3_6_x64
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '|Windows_3.6-x64')
+  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '|Windows_3.6-x64')
   dependsOn: BOOTS_ENVIRONMENTS
   displayName: 'Windows: Python 3.6-x64'
   pool:
@@ -110,7 +110,7 @@ jobs:
       artifactName: results
       pathToPublish: $(Build.ArtifactStagingDirectory)
 - job: windows_python_3_7_x64
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '|Windows_3.7-x64')
+  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '|Windows_3.7-x64')
   dependsOn: BOOTS_ENVIRONMENTS
   displayName: 'Windows: Python 3.7-x64'
   pool:

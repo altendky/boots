@@ -3,8 +3,8 @@ jobs:
     displayName: BOOTS_ENVIRONMENTS
     steps:
       - bash: |
-          echo '##vso[task.setvariable variable=v;isOutput=true]redgreenblue'
-        displayName: v
+          echo '##vso[task.setvariable variable=myOutputVar;isOutput=true]redgreenblue'
+        displayName: setvarStep
 
   - template: azure/templates/jobs/get_input_archive.yml
     parameters:

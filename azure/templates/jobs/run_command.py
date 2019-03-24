@@ -112,7 +112,7 @@ class Job:
 
         return {
             'job': self.job_name(),
-            'condition': "contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '{}')".format('|' + self.environment_string()),
+            'condition': "contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '{}')".format('|' + self.environment_string()),
             'dependsOn': self.depends_on,
             'displayName': self.display_name(),
             'pool': {
@@ -200,6 +200,7 @@ def main():
         stream=sys.stdout,
         sort_keys=False,
         default_flow_style=False,
+        width=1000,
     )
 
     return
