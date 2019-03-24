@@ -3,7 +3,6 @@ import sys
 import attr
 import yaml
 
-yaml.add_representer(dict, lambda self, data: yaml.representer.SafeRepresenter.represent_dict(self, data.items()))
 
 @attr.s
 class Platform:
@@ -23,27 +22,48 @@ class PythonVersion:
         return '{}-{}'.format(self.version_string(), self.architecture)
 
 
+def display_name(platform, python_version):
+    return '{}: Python {}'.format(
+        platform.name,
+        python_version.to_string(),
+    )
+
+
+def environment_string(platform, python_version):
+    return '{}_{}'.format(
+        platform.name,
+        python_version.to_string(),
+    )
+
+
+def job_name(platform, python_version):
+    return '{}_Python_{}'.format(
+        platform.name,
+        python_version.to_string(),
+    ).lower().replace('.', '_').replace('-', '_')
+
+
 @attr.s
 class MatrixJob:
     platform = attr.ib()
     python_version = attr.ib()
 
     def job_name(self):
-        return '{}_Python_{}'.format(
-            self.platform.name,
-            self.python_version.to_string(),
-        ).lower().replace('.', '_').replace('-', '_')
+        return job_name(
+            platform=self.platform,
+            python_version=self.python_version,
+        )
 
     def display_name(self):
-        return '{}: Python {}'.format(
-            self.platform.name,
-            self.python_version.to_string(),
+        return display_name(
+            platform=self.platform,
+            python_version=self.python_version,
         )
 
     def environment_string(self):
-        return '{}_{}'.format(
-            self.platform.name,
-            self.python_version.to_string(),
+        return environment_string(
+            platform=self.platform,
+            python_version=self.python_version,
         )
 
     def to_dict(self):
@@ -62,6 +82,83 @@ class MatrixJob:
             # },
         }
 
+
+@attr.s
+class Job:
+    platform = attr.ib()
+    python_version = attr.ib()
+    depends_on = attr.ib()
+
+    def display_name(self):
+        return display_name(
+            platform=self.platform,
+            python_version=self.python_version,
+        )
+
+    def environment_string(self):
+        return environment_string(
+            platform=self.platform,
+            python_version=self.python_version,
+        )
+
+    def job_name(self):
+        return job_name(
+            platform=self.platform,
+            python_version=self.python_version,
+        )
+
+    def to_dict(self):
+        use_python_task = UsePythonTask(python_version=self.python_version)
+
+        return {
+            'job': self.job_name(),
+            'condition': "contains(dependencies.BOOTS_ENVIRONMENTS.outputs['v.v'], '{}')".format('|' + self.environment_string()),
+            'dependsOn': self.depends_on,
+            'displayName': self.display_name(),
+            'pool': {
+                'vmImage': self.platform.vm_image,
+            },
+            'steps': [
+                use_python_task.to_dict(),
+                {
+                    'template': '../steps/in_archive_from_artifact.yml',
+                },
+                {
+                    'bash': '$(BOOTS_COMMAND)',
+                    'displayName': 'Run command',
+                },
+                {
+                    'task': 'CopyFiles@2',
+                    'inputs': {
+                        'contents': 'requirements/*.txt',
+                        'targetFolder': '$(Build.ArtifactStagingDirectory)',
+                    },
+                },
+                {
+                    'task': 'PublishBuildArtifacts@1',
+                    'inputs': {
+                        'artifactName': 'results',
+                        'pathToPublish': '$(Build.ArtifactStagingDirectory)',
+                    },
+                },
+            ],
+        }
+
+
+@attr.s
+class UsePythonTask:
+    python_version = attr.ib()
+
+    def to_dict(self):
+        return {
+            'task': 'UsePythonVersion@0',
+            'inputs': {
+                'architecture': self.python_version.architecture,
+                'versionSpec': self.python_version.version_string(),
+            },
+        }
+
+
 def main():
     platforms = [
         Platform(name='Linux', vm_image='ubuntu-16.04'),
@@ -75,7 +172,40 @@ def main():
         for architecture in ['x64']
     ]
 
+    job = Job(
+        platform=platforms[0],
+        python_version=python_versions[0],
+        depends_on='BOOTS_ENVIRONMENTS',
+    )
+
+    jobs = [
+        Job(
+            platform=platform,
+            python_version=python_version,
+            depends_on='BOOTS_ENVIRONMENTS',
+        )
+        for platform in platforms
+        for python_version in python_versions
+    ]
+
+    serialized_jobs = {
+        'jobs': [
+            job.to_dict()
+            for job in jobs
+        ],
+    }
+
+    yaml.safe_dump(
+        serialized_jobs,
+        stream=sys.stdout,
+        sort_keys=False,
+        default_flow_style=False,
+    )
+
+    return
+
     matrix_jobs = [
+
         MatrixJob(platform=platform, python_version=python_version)
         for platform in platforms
         for python_version in python_versions
