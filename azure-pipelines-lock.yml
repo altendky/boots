@@ -1,7 +1,10 @@
 jobs:
-  - template: azure/templates/jobs/translate_environment_variable.yml
-    parameters:
-      variable: BOOTS_ENVIRONMENTS
+  - job: BOOTS_ENVIRONMENTS
+    displayName: BOOTS_ENVIRONMENTS
+    steps:
+      - bash: |
+          echo '##vso[task.setvariable variable=v;isOutput=true]\$\(BOOTS_ENVIRONMENTS\)'
+        displayName: v
 
   - template: azure/templates/jobs/get_input_archive.yml
     parameters:
