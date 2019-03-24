@@ -1,13 +1,19 @@
 jobs:
-  - job: A
-    displayName: A
-    steps:
-      - script: "echo ##vso[task.setvariable variable=myOutputVar;isOutput=true]redgreenblue"
-        displayName: setvarStep
+- job: Job_1
+  displayName: Linux
+  condition: succeeded()
+  pool:
+    name: Hosted VS2017
 
-  - job: test
-    condition: contains(dependencies.A.outputs['setvarStep.myOutputVar'], 'redgreenblue')
-    dependsOn: A
-    steps:
-    - bash: echo blue
+  steps:
+    - script: "echo ##vso[task.setvariable variable=skipsubsequent;isOutput=true]false"
+      displayName: printvar
 
+- job: Job_2
+  condition: and(succeeded(), eq(dependencies.Job_1.outputs['printvar.skipsubsequent'],'true'))
+  dependsOn: Job_1
+  pool:
+    name: Hosted VS2017
+
+  steps:
+  - bash: echo blue
