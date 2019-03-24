@@ -12,10 +12,3 @@ jobs:
     steps:
     - bash: echo blue
 
-  - template: azure/templates/jobs/get_input_archive.yml
-    parameters:
-      job: get_input_archive
-
-  - template: azure/templates/jobs/run_command.yml
-    parameters:
-      dependsOn: get_input_archive
