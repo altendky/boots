@@ -7,7 +7,7 @@ jobs:
         displayName: setvarStep
 
   - job: test
-    condition: contains(dependencies.A.outputs['setvarStep.myOutputVar'], '|Windows_3.6-x64')
+    condition: contains(dependencies.A.outputs['setvarStep.myOutputVar'], 'redgreenblue')
     dependsOn: A
     steps:
     - bash: echo blue
