@@ -1,14 +1,14 @@
 jobs:
-  - job: BOOTS_ENVIRONMENTS
-    displayName: BOOTS_ENVIRONMENTS
+  - job: A
+    displayName: A
     steps:
       - bash: |
           echo '##vso[task.setvariable variable=myOutputVar;isOutput=true]redgreenblue'
         displayName: setvarStep
 
   - job: test
-    condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '|Windows_3.6-x64')
-    dependsOn: BOOTS_ENVIRONMENTS
+    condition: contains(dependencies.A.outputs['setvarStep.myOutputVar'], '|Windows_3.6-x64')
+    dependsOn: A
     steps:
     - bash: echo blue
 
