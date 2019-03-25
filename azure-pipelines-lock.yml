@@ -10,7 +10,7 @@ jobs:
       displayName: printvar
 
 - job: Job_2
-  condition: and(succeeded(), eq(variables[theVariable],'true'))
+  condition: and(succeeded(), eq(variables['theVariable'],'true'))
   dependsOn: Job_1
   pool:
     name: Hosted VS2017
@@ -19,7 +19,7 @@ jobs:
   - bash: echo blue
 
 - job: Job_3
-  condition: and(succeeded(), eq(variables[theVariable],'false'))
+  condition: and(succeeded(), eq(variables['theVariable'],'false'))
   dependsOn: Job_1
   pool:
     name: Hosted VS2017
