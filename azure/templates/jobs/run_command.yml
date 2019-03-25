@@ -11,7 +11,7 @@ jobs:
           architecture: 'x64'
     steps:
       - bash: |
-          echo "|${{ parameters.platform }}-$(versionSpec)-"
+          echo "|${{ parameters.platform }}-$(versionSpec)-$(architecture)"
           echo "${BOOTS_ENVIRONMENTS}"
           if [[ "${BOOTS_ENVIRONMENTS}" != *"|${{ parameters.platform }}-$(versionSpec)-"* ]]; then echo '##vso[task.setvariable variable=agent.jobstatus;]Skipped'; echo '##vso[task.complete result=Canceled;]DONE'; fi
         displayName: Skip if not requested
