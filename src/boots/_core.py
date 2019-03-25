@@ -159,6 +159,7 @@ def post_file(data):
 
 def request_remote_lock_build(archive_url, username, personal_access_token):
     parameters = {
+        'BOOTS_COMMAND': './boots.py lock',
         'BOOTS_ARCHIVE_URL': archive_url,
         'BOOTS_ENVIRONMENTS': '|Linux-3.6-x64|macOS-3.6-x64',
     }
