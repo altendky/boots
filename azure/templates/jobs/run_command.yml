@@ -1,133 +1,33 @@
 jobs:
-- job: linux_python_3_6_x64
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '|Linux_3.6-x64')
-  dependsOn: BOOTS_ENVIRONMENTS
-  displayName: 'Linux: Python 3.6-x64'
-  pool:
-    vmImage: ubuntu-16.04
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      architecture: x64
-      versionSpec: '3.6'
-  - template: ../steps/in_archive_from_artifact.yml
-  - bash: $(BOOTS_COMMAND)
-    displayName: Run command
-  - task: CopyFiles@2
-    inputs:
-      contents: requirements/*.txt
-      targetFolder: $(Build.ArtifactStagingDirectory)
-  - task: PublishBuildArtifacts@1
-    inputs:
-      artifactName: results
-      pathToPublish: $(Build.ArtifactStagingDirectory)
-- job: linux_python_3_7_x64
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '|Linux_3.7-x64')
-  dependsOn: BOOTS_ENVIRONMENTS
-  displayName: 'Linux: Python 3.7-x64'
-  pool:
-    vmImage: ubuntu-16.04
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      architecture: x64
-      versionSpec: '3.7'
-  - template: ../steps/in_archive_from_artifact.yml
-  - bash: $(BOOTS_COMMAND)
-    displayName: Run command
-  - task: CopyFiles@2
-    inputs:
-      contents: requirements/*.txt
-      targetFolder: $(Build.ArtifactStagingDirectory)
-  - task: PublishBuildArtifacts@1
-    inputs:
-      artifactName: results
-      pathToPublish: $(Build.ArtifactStagingDirectory)
-- job: macos_python_3_6_x64
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '|macOS_3.6-x64')
-  dependsOn: BOOTS_ENVIRONMENTS
-  displayName: 'macOS: Python 3.6-x64'
-  pool:
-    vmImage: macOS-10.13
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      architecture: x64
-      versionSpec: '3.6'
-  - template: ../steps/in_archive_from_artifact.yml
-  - bash: $(BOOTS_COMMAND)
-    displayName: Run command
-  - task: CopyFiles@2
-    inputs:
-      contents: requirements/*.txt
-      targetFolder: $(Build.ArtifactStagingDirectory)
-  - task: PublishBuildArtifacts@1
-    inputs:
-      artifactName: results
-      pathToPublish: $(Build.ArtifactStagingDirectory)
-- job: macos_python_3_7_x64
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '|macOS_3.7-x64')
-  dependsOn: BOOTS_ENVIRONMENTS
-  displayName: 'macOS: Python 3.7-x64'
-  pool:
-    vmImage: macOS-10.13
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      architecture: x64
-      versionSpec: '3.7'
-  - template: ../steps/in_archive_from_artifact.yml
-  - bash: $(BOOTS_COMMAND)
-    displayName: Run command
-  - task: CopyFiles@2
-    inputs:
-      contents: requirements/*.txt
-      targetFolder: $(Build.ArtifactStagingDirectory)
-  - task: PublishBuildArtifacts@1
-    inputs:
-      artifactName: results
-      pathToPublish: $(Build.ArtifactStagingDirectory)
-- job: windows_python_3_6_x64
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '|Windows_3.6-x64')
-  dependsOn: BOOTS_ENVIRONMENTS
-  displayName: 'Windows: Python 3.6-x64'
-  pool:
-    vmImage: vs2017-win2016
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      architecture: x64
-      versionSpec: '3.6'
-  - template: ../steps/in_archive_from_artifact.yml
-  - bash: $(BOOTS_COMMAND)
-    displayName: Run command
-  - task: CopyFiles@2
-    inputs:
-      contents: requirements/*.txt
-      targetFolder: $(Build.ArtifactStagingDirectory)
-  - task: PublishBuildArtifacts@1
-    inputs:
-      artifactName: results
-      pathToPublish: $(Build.ArtifactStagingDirectory)
-- job: windows_python_3_7_x64
-  condition: contains(dependencies.BOOTS_ENVIRONMENTS.outputs['setvarStep.myOutputVar'], '|Windows_3.7-x64')
-  dependsOn: BOOTS_ENVIRONMENTS
-  displayName: 'Windows: Python 3.7-x64'
-  pool:
-    vmImage: vs2017-win2016
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      architecture: x64
-      versionSpec: '3.7'
-  - template: ../steps/in_archive_from_artifact.yml
-  - bash: $(BOOTS_COMMAND)
-    displayName: Run command
-  - task: CopyFiles@2
-    inputs:
-      contents: requirements/*.txt
-      targetFolder: $(Build.ArtifactStagingDirectory)
-  - task: PublishBuildArtifacts@1
-    inputs:
-      artifactName: results
-      pathToPublish: $(Build.ArtifactStagingDirectory)
+  - job: lock_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}
+    displayName: Lock ${{ parameters.platform }} ${{ parameters.versionSpec }} ${{ parameters.architecture }}
+    dependsOn: ${{ parameters.dependsOn }}
+    pool:
+      vmImage: ${{ parameters.vmImage }}
+    strategy:
+      matrix:
+        3.6:
+          versionSpec: '3.6'
+          architecture: 'x64'
+    steps:
+      - bash: |
+          echo "|${{ parameters.platform }}-$(versionSpec)-"
+          echo "${{ parameters.environments }}"
+          if [[ "${{ parameters.environments }}" != *"|${{ parameters.platform }}-$(versionSpec)-"* ]]; then echo '##vso[task.setvariable variable=agent.jobstatus;]Skipped'; echo '##vso[task.complete result=Canceled;]DONE'; fi
+        displayName: Skip if not requested
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(versionSpec)
+          architecture: $(architecture)
+      - template: ../steps/in_archive_from_artifact.yml
+      - bash: |
+          ${{ parameters.command }}
+        displayName: Lock
+      - task: CopyFiles@2
+        inputs:
+          contents: 'requirements/*.txt'
+          targetFolder: $(Build.ArtifactStagingDirectory)
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathToPublish: $(Build.ArtifactStagingDirectory)
+          artifactName: lock_files

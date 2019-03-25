@@ -158,14 +158,7 @@ def post_file(data):
 
 
 def request_remote_lock_build(archive_url, username, personal_access_token):
-    parameters = {
-        'BOOTS_ARCHIVE_URL': archive_url,
-        'BOOTS_COMMAND': 'python boots.py lock',
-        'BOOTS_ENVIRONMENTS': ''.join(
-            '|{}_3.6-x64'.format(platform)
-            for platform in ('Linux', 'Windows')
-        ),
-    }
+    parameters = {'BOOTS_ARCHIVE_URL': archive_url}
 
     response = requests.post(
         url=(
@@ -183,7 +176,6 @@ def request_remote_lock_build(archive_url, username, personal_access_token):
         },
     )
 
-    print(response.text)
     response.raise_for_status()
     response_json = response.json()
     print(json.dumps(response_json, indent=4))
