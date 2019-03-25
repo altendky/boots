@@ -1,11 +1,20 @@
 jobs:
-  - job: lock_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}
-    displayName: Lock ${{ parameters.platform }} ${{ parameters.versionSpec }} ${{ parameters.architecture }}
+  - job: job_${{ parameters.platform }}_${{ parameters.versionSpec }}_${{ parameters.architecture }}
+    displayName: ${{ parameters.platform }} ${{ parameters.versionSpec }} ${{ parameters.architecture }}
     dependsOn: ${{ parameters.dependsOn }}
     pool:
       vmImage: ${{ parameters.vmImage }}
     strategy:
       matrix:
+        2.7:
+          versionSpec: '2.7'
+          architecture: 'x64'
+        3.4:
+          versionSpec: '3.4'
+          architecture: 'x64'
+        3.5:
+          versionSpec: '3.5'
+          architecture: 'x64'
         3.6:
           versionSpec: '3.6'
           architecture: 'x64'
@@ -25,7 +34,7 @@ jobs:
       - template: ../steps/in_archive_from_artifact.yml
       - bash: |
           ${{ parameters.command }}
-        displayName: Lock
+        displayName: Run Command
       - task: CopyFiles@2
         inputs:
           contents: 'requirements/*.txt'
