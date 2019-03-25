@@ -1,6 +1,7 @@
 variables:
   archive_url: ${BOOTS_ARCHIVE_URL}
   command: ${BOOTS_COMMAND}
+  environments: ${BOOTS_ENVIRONMENTS}
 
 jobs:
   - template: azure/templates/jobs/get_input_archive.yml
@@ -14,6 +15,7 @@ jobs:
       vmImage: 'ubuntu-16.04'
       dependsOn: get_input_archive
       command: $(command)
+      environments: $(environments)
 
   - template: azure/templates/jobs/run_command.yml
     parameters:
@@ -21,6 +23,7 @@ jobs:
       vmImage: 'macOS-10.13'
       dependsOn: get_input_archive
       command: $(command)
+      environments: $(environments)
 
   - template: azure/templates/jobs/run_command.yml
     parameters:
@@ -28,3 +31,4 @@ jobs:
       vmImage: 'vs2017-win2016'
       dependsOn: get_input_archive
       command: $(command)
+      environments: $(environments)

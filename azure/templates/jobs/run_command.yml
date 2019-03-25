@@ -24,8 +24,8 @@ jobs:
     steps:
       - bash: |
           echo "      This environment: |${{ parameters.platform }}-$(versionSpec)-$(architecture)"
-          echo "Requested environments: ${BOOTS_ENVIRONMENTS}"
-          if [[ "${BOOTS_ENVIRONMENTS}" != *"|${{ parameters.platform }}-$(versionSpec)-"* ]]; then echo '##vso[task.setvariable variable=agent.jobstatus;]Skipped'; echo '##vso[task.complete result=Canceled;]DONE'; fi
+          echo "Requested environments: ${{ parameters.environments }}"
+          if [[ "${{ parameters.environments }}" != *"|${{ parameters.platform }}-$(versionSpec)-"* ]]; then echo '##vso[task.setvariable variable=agent.jobstatus;]Skipped'; echo '##vso[task.complete result=Canceled;]DONE'; fi
         displayName: Skip if not requested
       - task: UsePythonVersion@0
         inputs:
