@@ -1,6 +1,6 @@
 variables:
-  archive_url: $(BOOTS_ARCHIVE_URL)
-  command: $(BOOTS_COMMAND)
+  archive_url: ${BOOTS_ARCHIVE_URL}
+  command: ${BOOTS_COMMAND}
 
 jobs:
   - template: azure/templates/jobs/get_input_archive.yml
