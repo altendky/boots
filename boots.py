@@ -779,12 +779,29 @@ class Configuration:
 
 
 def main():
-    configuration = Configuration.from_setup_cfg(
-        path=os.path.join(
-            os.path.dirname(resolve_path(__file__)),
-            'setup.cfg',
-        ),
+    our_directory = os.path.dirname(resolve_path(__file__))
+
+    config_files = (
+        os.path.join(
+            our_directory,
+            '{}.cfg'.format(name),
+        )
+        for name in (
+            os.path.splitext(os.path.basename(__file__))[0],
+            'setup',
+        )
     )
+    for file_path in config_files:
+        if os.path.isfile(file_path):
+            configuration = Configuration.from_setup_cfg(
+                path=file_path,
+            )
+            break
+    else:
+        configuration = Configuration.from_dict(
+            d={},
+            reference_path=our_directory,
+        )
 
     parser = argparse.ArgumentParser(
         description='Create and manage the venv',
