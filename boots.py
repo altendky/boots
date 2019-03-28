@@ -29,24 +29,9 @@ python2 = (2,) <= sys.version_info < (3,)
 python3 = (3,) <= sys.version_info
 
 if python2:
-    from urllib2 import (
-        Request,
-        urlopen,
-        HTTPPasswordMgrWithDefaultRealm,
-        HTTPBasicAuthHandler,
-        build_opener,
-    )
+    from urllib2 import urlopen
 else:
-    from urllib.request import (
-        Request,
-        urlopen,
-        HTTPPasswordMgrWithDefaultRealm,
-        HTTPBasicAuthHandler,
-        build_opener,
-    )
-
-
-py3 = sys.version_info[0] == 3
+    from urllib.request import urlopen
 
 
 class ExitError(Exception):
@@ -332,7 +317,7 @@ def windows_create(group, configuration):
         ],
         cwd=configuration.project_root,
     )
-    if py3:
+    if python3:
         python_path = python_path.decode()
     python_path = python_path.strip()
 
