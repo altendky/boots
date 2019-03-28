@@ -17,15 +17,18 @@ import shutil
 import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
-try:
-    from urllib.request import urlopen
-except ImportError:
+import zipfile
+
+python2 = (2,) <= sys.version_info < (3,)
+python3 = (3,) <= sys.version_info
+
+if python2:
     from urllib2 import urlopen
-
-
-py3 = sys.version_info[0] == 3
+else:
+    from urllib.request import urlopen
 
 
 class ExitError(Exception):
@@ -74,8 +77,13 @@ platforms = collections.OrderedDict((
     (macos, 'darwin'),
 ))
 
+platform_names = {
+    windows: 'Windows',
+    linux: 'Linux',
+    macos: 'macOS',
+}
 
-default_pre_requirements = ['pip', 'setuptools', 'pip-tools']
+default_pre_requirements = ['pip', 'setuptools', 'pip-tools', 'romp']
 
 
 def get_platform():
@@ -306,7 +314,7 @@ def windows_create(group, configuration):
         ],
         cwd=configuration.project_root,
     )
-    if py3:
+    if python3:
         python_path = python_path.decode()
     python_path = python_path.strip()
 
@@ -553,6 +561,76 @@ def pick(destination, group, configuration):
     shutil.copyfile(source, destination)
 
 
+def strip_zip_info_prefixes(prefix, zip_infos):
+    prefix = prefix.rstrip(os.sep) + os.sep
+    result = []
+
+    for zip_info in zip_infos:
+        name = zip_info.filename
+
+        if os.path.commonpath((name, prefix)) == '':
+            raise Exception('unexpected path: ' + name)
+
+        if len(name) <= len(prefix):
+            continue
+
+        if name.endswith(os.sep):
+            continue
+
+        zip_info.filename = os.path.relpath(name, prefix)
+        print(name, '->', zip_info.filename)
+        result.append(zip_info)
+
+    return result
+
+
+# TODO: CAMPid 0743105874017581374310081
+def make_remote_lock_archive(archive_path, configuration):
+    with tarfile.open(name=archive_path, mode='w') as archive:
+        for pattern in configuration.remotelock_paths:
+            for path in glob.glob(pattern):
+                archive.add(path)
+
+
+def remotelock(configuration):
+    artifact_name = 'lock_files'
+
+    directory = tempfile.mkdtemp()
+
+    try:
+        archive_path = os.path.join(directory, 'archive.tar.gz')
+        artifact_path = os.path.join(directory, 'artifact.zip')
+
+        make_remote_lock_archive(
+            archive_path=archive_path,
+            configuration=configuration,
+        )
+
+        check_call(
+            [
+                os.path.join(configuration.resolved_venv_common_bin(), 'romp'),
+                '--command', './boots.py lock',
+                '--environments', ''.join(
+                    '|{}'.format(
+                        configuration.python_identifier.for_romp(platform),
+                    )
+                    for platform in (linux, macos, windows)
+                ),
+                '--archive', archive_path,
+                '--artifact', artifact_path,
+            ]
+        )
+
+        with zipfile.ZipFile(file=artifact_path) as zip_file:
+            tweaked_members = strip_zip_info_prefixes(
+                prefix=artifact_name,
+                zip_infos=zip_file.infolist(),
+            )
+            zip_file.extractall(members=tweaked_members)
+    finally:
+        rmtree(directory)
+
+
 def add_group_option(parser, default):
     parser.add_argument(
         '--group',
@@ -624,6 +702,13 @@ class PythonIdentifier:
 
         return command
 
+    def for_romp(self, platform):
+        return '{}-{}-x{}'.format(
+            platform_names[platform],
+            self.dotted_version(places=2),
+            self.bit_width,
+        )
+
 
 boolean_string_pairs = (
     ('yes', 'no'),
@@ -664,6 +749,12 @@ class Configuration:
         'dist_commands': ('sdist', 'bdist_wheel'),
         'dist_dir': 'dist',
         'use_hashes': 'yes',
+        'remotelock_paths': ':'.join((
+            'boots.py',
+            'setup.cfg',
+            'setup.py',
+            'requirements/*.in',
+        )),
     }
 
     def __init__(
@@ -683,6 +774,7 @@ class Configuration:
             dist_dir,
             use_hashes,
             platform,
+            remotelock_paths,
     ):
         self.project_root = project_root
         self.python_identifier = python_identifier
@@ -692,6 +784,7 @@ class Configuration:
         self.dist_commands = dist_commands
         self.use_hashes = use_hashes
         self.platform = platform
+        self.remotelock_paths = remotelock_paths
 
         self.requirements_path = requirements_path
         self.dot_env = dot_env
@@ -732,6 +825,8 @@ class Configuration:
 
         platform = get_platform()
 
+        remotelock_paths = tuple(c['remotelock_paths'].split(':'))
+
         return cls(
             project_root=c['project_root'],
             python_identifier=python_identifier,
@@ -748,6 +843,7 @@ class Configuration:
             dist_dir=c['dist_dir'],
             use_hashes=use_hashes,
             platform=platform,
+            remotelock_paths=remotelock_paths,
         )
 
     def resolved_dist_dir(self):
@@ -914,6 +1010,13 @@ def main():
     )
     add_group_option(parser=pick_parser, default=configuration.default_group)
     pick_parser.set_defaults(func=pick)
+
+    remotelock_parser = add_subparser(
+        subparsers,
+        'remotelock',
+        description='Remotely lock',
+    )
+    remotelock_parser.set_defaults(func=remotelock)
 
     args = parser.parse_args()
 
