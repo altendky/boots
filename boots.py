@@ -20,8 +20,10 @@ import shutil
 import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
+import zipfile
 
 python2 = (2,) <= sys.version_info < (3,)
 python3 = (3,) <= sys.version_info
@@ -93,8 +95,13 @@ platforms = collections.OrderedDict((
     (macos, 'darwin'),
 ))
 
+platform_names = {
+    windows: 'Windows',
+    linux: 'Linux',
+    macos: 'macOS',
+}
 
-default_pre_requirements = ['pip', 'setuptools', 'pip-tools']
+default_pre_requirements = ['pip', 'setuptools', 'pip-tools', 'romp']
 
 
 def get_platform():
@@ -572,202 +579,74 @@ def pick(destination, group, configuration):
     shutil.copyfile(source, destination)
 
 
+def strip_zip_info_prefixes(prefix, zip_infos):
+    prefix = prefix.rstrip(os.sep) + os.sep
+    result = []
+
+    for zip_info in zip_infos:
+        name = zip_info.filename
+
+        if os.path.commonpath((name, prefix)) == '':
+            raise Exception('unexpected path: ' + name)
+
+        if len(name) <= len(prefix):
+            continue
+
+        if name.endswith(os.sep):
+            continue
+
+        zip_info.filename = os.path.relpath(name, prefix)
+        print(name, '->', zip_info.filename)
+        result.append(zip_info)
+
+    return result
+
+
 # TODO: CAMPid 0743105874017581374310081
-def make_remote_lock_archive():
-    import tarfile
-    import io
-
-    archive_file = io.BytesIO()
-
-    archive = tarfile.TarFile(mode='w', fileobj=archive_file)
-
-    patterns = (
-        'boots.py',
-        'setup.cfg',
-        'requirements/*.in',
-    )
-
-    for pattern in patterns:
-        for path in glob.glob(pattern):
-            archive.add(path)
-
-    archive.close()
-
-    return archive_file.getvalue()
-
-if True:
-    import mimetypes
-    import random
-    import string
-
-    _BOUNDARY_CHARS = string.digits + string.ascii_letters
-
-
-    def encode_multipart(fields={}, files={}, boundary=None):
-        r"""Encode dict of form fields and dict of files as multipart/form-data.
-        Return tuple of (body_string, headers_dict). Each value in files is a dict
-        with required keys 'filename' and 'content', and optional 'mimetype' (if
-        not specified, tries to guess mime type or uses 'application/octet-stream').
-
-        >>> body, headers = encode_multipart({'FIELD': 'VALUE'},
-        ...                                  {'FILE': {'filename': 'F.TXT', 'content': 'CONTENT'}},
-        ...                                  boundary='BOUNDARY')
-        >>> print('\n'.join(repr(l) for l in body.split('\r\n')))
-        '--BOUNDARY'
-        'Content-Disposition: form-data; name="FIELD"'
-        ''
-        'VALUE'
-        '--BOUNDARY'
-        'Content-Disposition: form-data; name="FILE"; filename="F.TXT"'
-        'Content-Type: text/plain'
-        ''
-        'CONTENT'
-        '--BOUNDARY--'
-        ''
-        >>> print(sorted(headers.items()))
-        [('Content-Length', '193'), ('Content-Type', 'multipart/form-data; boundary=BOUNDARY')]
-        >>> len(body)
-        193
-        """
-
-        def escape_quote(s):
-            return s.replace('"', '\\"')
-
-        if boundary is None:
-            boundary = ''.join(
-                random.choice(_BOUNDARY_CHARS) for i in range(30))
-        lines = []
-
-        for name, value in fields.items():
-            lines.extend((
-                '--{0}'.format(boundary),
-                'Content-Disposition: form-data; name="{0}"'.format(
-                    escape_quote(name)),
-                '',
-                str(value),
-            ))
-
-        for name, value in files.items():
-            filename = value['filename']
-            if 'mimetype' in value:
-                mimetype = value['mimetype']
-            else:
-                mimetype = mimetypes.guess_type(filename)[
-                               0] or 'application/octet-stream'
-            lines.extend((
-                '--{0}'.format(boundary),
-                'Content-Disposition: form-data; name="{0}"; filename="{1}"'.format(
-                    escape_quote(name), escape_quote(filename)),
-                'Content-Type: {0}'.format(mimetype),
-                '',
-                value['content'],
-            ))
-
-        lines.extend((
-            '--{0}--'.format(boundary),
-            '',
-        ))
-        body = '\r\n'.join(lines)
-
-        headers = {
-            'Content-Type': 'multipart/form-data; boundary={0}'.format(
-                boundary),
-            'Content-Length': str(len(body)),
-        }
-
-        return (body, headers)
-
-
-def _post_file(data):
-    print('post_file(): len(data):', len(data))
-
-    lines = (
-        b'Content-Disposition: form-data; name="file"; filename="archive.tar.gz"',
-        b'Content-Type: application/octet-stream',
-        b'',
-        data,
-    )
-
-    body = b'\r\n'.join(lines)
-
-    request = Request(
-        url='https://file.io/?expires=1w',
-        headers={
-            'Content-Length': len(body),
-            'Content-Type': 'multipart/form-data',
-        },
-        data=body,
-    )
-    result = urlopen(request)
-    print('post_file(): result.code:', result.code)
-    body = result.read()
-    print('post_file(): body:', body)
-    url = json.loads(body)['link']
-    return url
-
-
-def post_file(data):
-    fields = {}
-    files = {'file': {'filename': 'archive.tar.gz', 'content': data}}
-    body, headers = encode_multipart(files={'FILE': {'filename': 'archive.tar.gz', 'content': data}})
-
-    request = Request(
-        url='https://file.io/?expires=1w',
-        # body=
-    )
-
-
-def _remotelock(configuration):
-    configuration.resolved_venv_python
-    archive_data = make_remote_lock_archive()
-    archive_url = post_file(data=archive_data)
-    print('archive_url:', archive_url)
-
-    username = input('Username: ')
-    password = getpass.getpass()
-
-    import urllib
-
-    top_level_url = "https://dev.azure.com"
-    url = top_level_url + '/altendky/boots/_apis/build/builds?api-version=5.0'
-
-    password_mgr = HTTPPasswordMgrWithDefaultRealm()
-    password_mgr.add_password(None, url, username, password)
-    handler = HTTPBasicAuthHandler(password_mgr)
-    opener = build_opener(handler)
-
-    parameters = {'MY_PARAMETER': 'my_value'}
-    values = {
-        "definition": {"id": 2},
-        "sourceBranch": "lock_in_azure",
-        "parameters": json.dumps(parameters),
-    }
-    data = json.dumps(values).encode('ascii')
-
-    request = Request(
-        url=url,
-        data=data,
-        headers={
-            'Authorization': 'Basic {}'.format(base64.standard_b64encode(':'.join((username, password)).encode('ascii'))),
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-        },
-    )
-    result = opener.open(request)
-
-    print(result.status)
-    json_result = json.loads(result.read())
-    print(json.dumps(json_result, indent=4))
+def make_remote_lock_archive(archive_path, configuration):
+    with tarfile.open(name=archive_path, mode='w') as archive:
+        for pattern in configuration.remotelock_paths:
+            for path in glob.glob(pattern):
+                archive.add(path)
 
 
 def remotelock(configuration):
-    check_call(
-        [
-            os.path.join(configuration.resolved_venv_common_bin(), 'boots'),
-            'remotelock',
-        ]
-    )
-    return
+    artifact_name = 'lock_files'
+
+    directory = tempfile.mkdtemp()
+
+    try:
+        archive_path = os.path.join(directory, 'archive.tar.gz')
+        artifact_path = os.path.join(directory, 'artifact.zip')
+
+        make_remote_lock_archive(
+            archive_path=archive_path,
+            configuration=configuration,
+        )
+
+        check_call(
+            [
+                os.path.join(configuration.resolved_venv_common_bin(), 'romp'),
+                '--command', './boots.py lock',
+                '--environments', ''.join(
+                    '|{}'.format(
+                        configuration.python_identifier.for_romp(platform),
+                    )
+                    for platform in (linux, macos, windows)
+                ),
+                '--archive', archive_path,
+                '--artifact', artifact_path,
+            ]
+        )
+
+        with zipfile.ZipFile(file=artifact_path) as zip_file:
+            tweaked_members = strip_zip_info_prefixes(
+                prefix=artifact_name,
+                zip_infos=zip_file.infolist(),
+            )
+            zip_file.extractall(members=tweaked_members)
+    finally:
+        rmtree(directory)
 
 
 def add_group_option(parser, default):
@@ -841,6 +720,13 @@ class PythonIdentifier:
 
         return command
 
+    def for_romp(self, platform):
+        return '{}-{}-x{}'.format(
+            platform_names[platform],
+            self.dotted_version(places=2),
+            self.bit_width,
+        )
+
 
 boolean_string_pairs = (
     ('yes', 'no'),
@@ -881,6 +767,12 @@ class Configuration:
         'dist_commands': ('sdist', 'bdist_wheel'),
         'dist_dir': 'dist',
         'use_hashes': 'yes',
+        'remotelock_paths': ':'.join((
+            'boots.py',
+            'setup.cfg',
+            'setup.py',
+            'requirements/*.in',
+        )),
     }
 
     def __init__(
@@ -900,6 +792,7 @@ class Configuration:
             dist_dir,
             use_hashes,
             platform,
+            remotelock_paths,
     ):
         self.project_root = project_root
         self.python_identifier = python_identifier
@@ -909,6 +802,7 @@ class Configuration:
         self.dist_commands = dist_commands
         self.use_hashes = use_hashes
         self.platform = platform
+        self.remotelock_paths = remotelock_paths
 
         self.requirements_path = requirements_path
         self.dot_env = dot_env
@@ -949,6 +843,8 @@ class Configuration:
 
         platform = get_platform()
 
+        remotelock_paths = tuple(c['remotelock_paths'].split(':'))
+
         return cls(
             project_root=c['project_root'],
             python_identifier=python_identifier,
@@ -965,6 +861,7 @@ class Configuration:
             dist_dir=c['dist_dir'],
             use_hashes=use_hashes,
             platform=platform,
+            remotelock_paths=remotelock_paths,
         )
 
     def resolved_dist_dir(self):
