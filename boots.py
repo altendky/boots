@@ -3,16 +3,13 @@
 from __future__ import print_function
 
 import argparse
-import base64
 import collections
 try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
 import errno
-import getpass
 import glob
-import json
 import os
 import os.path
 import shlex
