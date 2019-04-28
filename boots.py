@@ -12,6 +12,7 @@ import errno
 import glob
 import os
 import os.path
+import posixpath
 import shlex
 import shutil
 import stat
@@ -20,7 +21,6 @@ import sys
 import tarfile
 import tempfile
 import time
-import zipfile
 
 python2 = (2,) <= sys.version_info < (3,)
 python3 = (3,) <= sys.version_info
@@ -561,40 +561,39 @@ def pick(destination, group, configuration):
     shutil.copyfile(source, destination)
 
 
-def strip_zip_info_prefixes(prefix, zip_infos):
-    prefix = prefix.rstrip(os.sep) + os.sep
-    result = []
-
-    for zip_info in zip_infos:
-        name = zip_info.filename
-
-        if os.path.commonpath((name, prefix)) == '':
-            raise Exception('unexpected path: ' + name)
-
-        if len(name) <= len(prefix):
-            continue
-
-        if name.endswith(os.sep):
-            continue
-
-        zip_info.filename = os.path.relpath(name, prefix)
-        print(name, '->', zip_info.filename)
-        result.append(zip_info)
-
-    return result
-
-
 # TODO: CAMPid 0743105874017581374310081
 def make_remote_lock_archive(archive_path, configuration):
+    root = configuration.project_root
+
     with tarfile.open(name=archive_path, mode='w') as archive:
         for pattern in configuration.remotelock_paths:
-            for path in glob.glob(pattern):
-                archive.add(path)
+            for path in glob.glob(os.path.join(root, pattern)):
+                archive_name = os.path.relpath(path, root)
+                archive.add(path, arcname=archive_name)
+
+
+# https://www.oreilly.com/library/view/python-cookbook/0596001673/ch04s16.html
+def splitall(path):
+    allparts = []
+    while 1:
+        parts = os.path.split(path)
+        if parts[0] == path:  # sentinel for absolute paths
+            allparts.insert(0, parts[0])
+            break
+        elif parts[1] == path: # sentinel for relative paths
+            allparts.insert(0, parts[1])
+            break
+        else:
+            path = parts[0]
+            allparts.insert(0, parts[1])
+    return allparts
+
+
+def ensure_posixpath(path):
+    return posixpath.join(*splitall(path))
 
 
 def remotelock(configuration):
-    artifact_name = 'lock_files'
-
     directory = tempfile.mkdtemp()
 
     try:
@@ -606,27 +605,33 @@ def remotelock(configuration):
             configuration=configuration,
         )
 
+        version = configuration.python_identifier.romp_version()
+        architecture = configuration.python_identifier.romp_architecture()
+
+        artifact_paths = ensure_posixpath(os.path.join(
+            configuration.requirements_path,
+            '*.txt',
+        ))
+
         check_call(
             [
                 os.path.join(configuration.resolved_venv_common_bin(), 'romp'),
                 '--command', './boots.py lock',
-                '--environments', ''.join(
-                    '|{}'.format(
-                        configuration.python_identifier.for_romp(platform),
-                    )
-                    for platform in (linux, macos, windows)
-                ),
-                '--archive', archive_path,
+                '--platform', 'Windows',
+                '--interpreter', 'CPython',
+                '--version', version,
+                '--architecture', architecture,
+                # '--include', 'Windows', 'CPython', version, 'x86',
+                '--include', 'Linux', 'CPython', version, 'x86_64',
+                '--include', 'macOS', 'CPython', version, 'x86_64',
+                '--archive-file', archive_path,
+                '--artifact-paths', artifact_paths,
                 '--artifact', artifact_path,
             ]
         )
 
-        with zipfile.ZipFile(file=artifact_path) as zip_file:
-            tweaked_members = strip_zip_info_prefixes(
-                prefix=artifact_name,
-                zip_infos=zip_file.infolist(),
-            )
-            zip_file.extractall(members=tweaked_members)
+        with tarfile.open(artifact_path, mode='r:gz') as tar:
+            tar.extractall(path=configuration.project_root)
     finally:
         rmtree(directory)
 
@@ -708,6 +713,15 @@ class PythonIdentifier:
             self.dotted_version(places=2),
             self.bit_width,
         )
+
+    def romp_version(self):
+        return self.dotted_version(places=2)
+
+    def romp_architecture(self):
+        return {
+            32: 'x86',
+            64: 'x86_64',
+        }[self.bit_width]
 
 
 boolean_string_pairs = (
