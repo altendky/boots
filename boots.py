@@ -616,7 +616,7 @@ def remotelock(configuration):
         check_call(
             [
                 os.path.join(configuration.resolved_venv_common_bin(), 'romp'),
-                '--command', './boots.py lock',
+                '--command', './{} lock'.format(os.path.basename(__file__)),
                 '--platform', 'Windows',
                 '--interpreter', 'CPython',
                 '--version', version,
@@ -671,7 +671,7 @@ class PythonIdentifier:
         if split == bit_split:
             bit_width = int(bit_width)
         else:
-            bit_width = None
+            bit_width = 64
 
         version_string = version_string.strip()
         if version_string == '':
@@ -764,7 +764,8 @@ class Configuration:
         'dist_dir': 'dist',
         'use_hashes': 'yes',
         'remotelock_paths': ':'.join((
-            'boots.py',
+            os.path.basename(__file__),
+            '{}.cfg'.format(os.path.splitext(os.path.basename(__file__))[0]),
             'setup.cfg',
             'setup.py',
             'requirements/*.in',
@@ -981,7 +982,9 @@ def main():
     resole_parser = add_subparser(
         subparsers,
         'resole',
-        description='Resole boots.py (self update)',
+        description='Resole {} (self update)'.format(
+            os.path.basename(__file__)
+        ),
     )
     resole_parser.add_argument(
         '--url',
