@@ -620,7 +620,7 @@ def remotelock(configuration):
         check_call(
             [
                 os.path.join(configuration.resolved_venv_common_bin(), 'romp'),
-                '--command', './{} lock --use-default-python'.format(os.path.basename(__file__)),
+                '--command', 'python {} lock --use-default-python'.format(os.path.basename(__file__)),
                 '--platform', 'Windows',
                 '--interpreter', 'CPython',
                 '--version', version,
