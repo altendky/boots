@@ -793,6 +793,7 @@ class Configuration:
             'setup.cfg',
             'setup.py',
             'requirements/*.in',
+            'pyproject.toml',
         )),
     }
 
