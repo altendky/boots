@@ -391,6 +391,7 @@ def lock_core(configuration):
                     'pip-compile',
                 ),
                 '--output-file', out_path,
+                '--build-isolation',
                 specification_path,
             ] + extras,
             cwd=configuration.project_root,
