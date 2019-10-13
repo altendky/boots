@@ -596,6 +596,9 @@ def ensure_posixpath(path):
 
 
 def remotelock(configuration):
+    if not venv_existed(configuration=configuration):
+        create(group=None, configuration=configuration)
+
     configuration.python_identifier.use_default_python = True
 
     directory = tempfile.mkdtemp()
