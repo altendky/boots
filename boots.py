@@ -392,8 +392,7 @@ def lock_core(configuration):
                 ),
                 '--output-file', out_path,
                 '--build-isolation',
-                specification_path,
-            ] + extras,
+            ] + extras + [specification_path],
             cwd=configuration.project_root,
         )
 
