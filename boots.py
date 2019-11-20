@@ -302,16 +302,22 @@ def sync_requirements(group, configuration, python=None, pip_sync=None):
 
 def sync_requirements_file(env, requirements, configuration, pip_sync):
     if pip_sync is None:
-        pip_sync = os.path.join(
-            configuration.resolved_venv_common_bin(),
-            'pip-sync',
-        )
+        pip_sync = [
+            os.path.join(
+                configuration.resolved_venv_common_bin(),
+                'python',
+            ),
+            '-m', 'piptools',
+            'sync',
+        ]
 
     check_call(
-        [
-            pip_sync,
-            requirements,
-        ],
+        (
+            pip_sync
+            + [
+                requirements,
+            ]
+        ),
         cwd=configuration.project_root,
         env=env,
     )
@@ -676,7 +682,11 @@ def install(group, configuration):
             python=sys.executable,
             group=group,
             configuration=configuration,
-            pip_sync=configuration.resolved_active_python_script('pip-sync'),
+            pip_sync=[
+                configuration.resolved_active_python_script('python'),
+                '-m', 'piptools',
+                'sync',
+            ],
         )
 
 
