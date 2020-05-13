@@ -388,12 +388,16 @@ def lock_core(configuration):
     if not venv_existed(configuration=configuration):
         create(group=None, configuration=configuration)
 
-    specification_paths = tuple(glob.glob(
-        os.path.join(configuration.resolved_requirements_path(), '*.in'),
-    ))
+    specification_paths = tuple(
+        os.path.basename(path)
+        for path in glob.glob(
+            os.path.join(configuration.resolved_requirements_path(), '*.in'),
+        )
+    )
 
     for specification_path in specification_paths:
-        group = os.path.basename(specification_path)
+        name = os.path.basename(specification_path)
+        group = os.path.splitext(name)[0]
 
         out_path = build_requirements_path(
             group=group,
