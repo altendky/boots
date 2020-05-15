@@ -389,15 +389,15 @@ def lock_core(configuration):
         create(group=None, configuration=configuration)
 
     specification_paths = tuple(
-        os.path.basename(path)
-        for path in glob.glob(
+        os.path.join(configuration.resolved_requirements_path(), filename)
+        for filename in glob.glob(
             os.path.join(configuration.resolved_requirements_path(), '*.in'),
         )
     )
 
     for specification_path in specification_paths:
-        name = os.path.basename(specification_path)
-        group = os.path.splitext(name)[0]
+        stem = os.path.splitext(specification_path)[0]
+        group = os.path.basename(stem)
 
         out_path = build_requirements_path(
             group=group,
@@ -411,6 +411,11 @@ def lock_core(configuration):
 
         if configuration.use_hashes:
             extras.append('--generate-hashes')
+        
+        root_relative_specification_path = os.path.relpath(
+            specification_path,
+            configuration.project_root,
+        )
 
         check_call(
             [
@@ -420,8 +425,8 @@ def lock_core(configuration):
                 ),
                 '--output-file', out_path,
                 '--build-isolation',
-            ] + extras + [specification_path],
-            cwd=configuration.resolved_requirements_path(),
+            ] + extras + [root_relative_specification_path],
+            cwd=configuration.project_root,
         )
 
 
