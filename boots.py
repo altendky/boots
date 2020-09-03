@@ -423,7 +423,7 @@ def lock_core(use_default_python, configuration):
 
         if configuration.use_hashes:
             extras.append('--generate-hashes')
-        
+
         root_relative_specification_path = os.path.relpath(
             specification_path,
             configuration.project_root,
