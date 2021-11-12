@@ -671,6 +671,7 @@ def remotelock(configuration):
             '*.txt',
         ))
 
+        #fstring in artifact_paths to ensure it expands the files in remote pipeline vs local romp
         check_call(
             [
                 os.path.join(configuration.resolved_venv_common_bin(), 'romp'),
@@ -683,7 +684,7 @@ def remotelock(configuration):
                 '--include', 'Linux', 'CPython', version, 'x86_64',
                 '--include', 'macOS', 'CPython', version, 'x86_64',
                 '--archive-file', archive_path,
-                '--artifact-paths', artifact_paths,
+                '--artifact-paths', f"'{artifact_paths}'",
                 '--artifact', artifact_path,
             ]
         )
